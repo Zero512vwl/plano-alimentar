@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v13";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v14";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
