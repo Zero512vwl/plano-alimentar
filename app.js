@@ -2,6 +2,7 @@
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
+  const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
   const intakeSection = document.getElementById("intake-section");
   const planSection = document.getElementById("plan-section");
@@ -9,6 +10,7 @@
   const form = document.getElementById("anamnese-form");
   const formError = document.getElementById("form-error");
 
+  const btnThemeToggle = document.getElementById("btn-theme-toggle");
   const btnEditProfile = document.getElementById("btn-edit-profile");
   const btnExportPdf = document.getElementById("btn-export-pdf");
   const btnClearChecks = document.getElementById("btn-clear-checks");
@@ -631,6 +633,31 @@
     saveCheckedItems();
     if (currentPlan) renderShopping(currentPlan);
   });
+
+  function applyTheme(mode) {
+    const validMode = mode === "light" ? "light" : "dark";
+    document.documentElement.dataset.mode = validMode;
+    if (btnThemeToggle) {
+      btnThemeToggle.textContent = validMode === "dark" ? "Tema claro" : "Tema escuro";
+    }
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute("content", validMode === "dark" ? "#111614" : "#f3f3ef");
+    }
+    try {
+      localStorage.setItem(STORAGE_THEME_KEY, validMode);
+    } catch {
+      // Ignora erro se localStorage estiver bloqueado
+    }
+  }
+
+  if (btnThemeToggle) {
+    applyTheme(document.documentElement.dataset.mode || "dark");
+    btnThemeToggle.addEventListener("click", () => {
+      const current = document.documentElement.dataset.mode === "light" ? "light" : "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+  }
 
   setupTabs();
   renderDislikesPicker();

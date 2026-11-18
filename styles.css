@@ -1,6 +1,8 @@
-/* Hallmark v2.0.0 — Editorial Utility · Plano Alimentar Pessoal */
+/* Hallmark v2.0.0 — Editorial Utility · Plano Alimentar Pessoal · modes: light+dark */
 
 :root {
+  color-scheme: light dark;
+
   --bg-page: #f3f3ef;
   --bg-surface: #fcfcfa;
   --bg-subtle: #e5e4de;
@@ -16,7 +18,9 @@
 
   --accent-primary: #14532d;
   --accent-primary-hover: #0f3f22;
+  --accent-text: #14532d;
   --accent-warm: #9a3412;
+  --accent-warm-text: #9a3412;
   --border-subtle: #d4d3cb;
   --border-strong: #a1a09a;
   --danger-text: #991b1b;
@@ -40,6 +44,74 @@
   --space-lg: 32px;
   --space-xl: 48px;
   --container-max: 1080px;
+}
+
+[data-mode="dark"] {
+  color-scheme: dark;
+
+  --bg-page: #111614;
+  --bg-surface: #18201d;
+  --bg-subtle: #212c28;
+  --bg-track: #2b3833;
+  --bg-accent-soft: #163024;
+  --bg-warn-soft: #2b2113;
+  --bg-danger-soft: #2e1717;
+
+  --text-primary: #ebf2ee;
+  --text-secondary: #b5c4bd;
+  --text-muted: #8ea199;
+  --text-on-accent: #f7fee7;
+
+  --accent-primary: #15803d;
+  --accent-primary-hover: #166534;
+  --accent-text: #4ade80;
+  --accent-warm: #9a3412;
+  --accent-warm-text: #fbbf24;
+  --border-subtle: #2a3732;
+  --border-strong: #3e524a;
+  --danger-text: #fca5a5;
+
+  --shadow-card: inset 0 0 0 1px rgba(235, 242, 238, 0.06);
+  --shadow-card-hover: inset 0 0 0 1px rgba(74, 222, 128, 0.35);
+  --shadow-halo: 0 0 0 2px rgba(24, 32, 29, 0.95), 0 0 0 4px rgba(74, 222, 128, 0.32);
+  --shadow-focus: 0 0 0 4px rgba(74, 222, 128, 0.25);
+  --shadow-pill: inset 0 0 0 1px rgba(235, 242, 238, 0.08);
+  --shadow-inset: inset 0 0 0 1px rgba(17, 22, 20, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode]) {
+    color-scheme: dark;
+
+    --bg-page: #111614;
+    --bg-surface: #18201d;
+    --bg-subtle: #212c28;
+    --bg-track: #2b3833;
+    --bg-accent-soft: #163024;
+    --bg-warn-soft: #2b2113;
+    --bg-danger-soft: #2e1717;
+
+    --text-primary: #ebf2ee;
+    --text-secondary: #b5c4bd;
+    --text-muted: #8ea199;
+    --text-on-accent: #f7fee7;
+
+    --accent-primary: #15803d;
+    --accent-primary-hover: #166534;
+    --accent-text: #4ade80;
+    --accent-warm: #9a3412;
+    --accent-warm-text: #fbbf24;
+    --border-subtle: #2a3732;
+    --border-strong: #3e524a;
+    --danger-text: #fca5a5;
+
+    --shadow-card: inset 0 0 0 1px rgba(235, 242, 238, 0.06);
+    --shadow-card-hover: inset 0 0 0 1px rgba(74, 222, 128, 0.35);
+    --shadow-halo: 0 0 0 2px rgba(24, 32, 29, 0.95), 0 0 0 4px rgba(74, 222, 128, 0.32);
+    --shadow-focus: 0 0 0 4px rgba(74, 222, 128, 0.25);
+    --shadow-pill: inset 0 0 0 1px rgba(235, 242, 238, 0.08);
+    --shadow-inset: inset 0 0 0 1px rgba(17, 22, 20, 0.4);
+  }
 }
 
 *,
@@ -124,6 +196,13 @@ body {
 .brand-sub {
   font-size: 0.875rem;
   color: var(--text-secondary);
+}
+
+.header-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .header-actions {
@@ -360,8 +439,8 @@ h3 {
 
 .check-pill:has(input:checked) {
   background-color: var(--bg-accent-soft);
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
   font-weight: 600;
   box-shadow: var(--shadow-pill);
 }
@@ -461,7 +540,7 @@ h3 {
   font-family: var(--font-sans);
   font-size: 0.925rem;
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--accent-text);
   margin: 0 0 var(--space-xs);
 }
 
@@ -510,7 +589,7 @@ h3 {
   display: block;
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--accent-text);
 }
 
 .progress-track {
@@ -529,7 +608,7 @@ h3 {
 .progress-fill {
   width: 100%;
   height: 100%;
-  background-color: var(--accent-primary);
+  background-color: var(--accent-text);
   border-radius: 999px;
   transform-origin: left center;
   transform: scaleX(var(--progress, 0));
@@ -586,7 +665,7 @@ h3 {
 
 .tab-btn.is-active {
   background-color: var(--bg-surface);
-  color: var(--accent-primary);
+  color: var(--accent-text);
   box-shadow: var(--shadow-pill);
 }
 
@@ -670,7 +749,7 @@ h3 {
 .meal-slot-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--accent-warm);
+  color: var(--accent-warm-text);
 }
 
 .meal-macros {
@@ -691,7 +770,7 @@ h3 {
 .badge-estimate {
   display: inline-block;
   background-color: var(--bg-warn-soft);
-  color: var(--accent-warm);
+  color: var(--accent-warm-text);
   font-size: 0.78rem;
   padding: 2px var(--space-xs);
   border-radius: 4px;
@@ -701,7 +780,7 @@ h3 {
 .badge-freeze {
   display: inline-block;
   background-color: var(--bg-accent-soft);
-  color: var(--accent-primary);
+  color: var(--accent-text);
   font-size: 0.8rem;
   font-weight: 600;
   padding: 2px var(--space-xs);
@@ -786,7 +865,7 @@ h3 {
 .shopping-progress {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--accent-primary);
+  color: var(--accent-text);
 }
 
 .shopping-columns {
@@ -811,7 +890,7 @@ h3 {
   font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--accent-text);
   margin: 0 0 var(--space-xs);
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: var(--space-2xs);
@@ -890,6 +969,26 @@ h3 {
   @page {
     size: A4;
     margin: 14mm;
+  }
+
+  :root,
+  [data-mode="dark"] {
+    color-scheme: light;
+    --bg-page: #fcfcfa;
+    --bg-surface: #fcfcfa;
+    --bg-subtle: #f3f3ef;
+    --bg-track: #d4d3cb;
+    --bg-accent-soft: #dcfce7;
+    --bg-warn-soft: #fef3c7;
+    --text-primary: #18181b;
+    --text-secondary: #3f3f46;
+    --text-muted: #52525b;
+    --accent-primary: #14532d;
+    --accent-text: #14532d;
+    --accent-warm: #9a3412;
+    --accent-warm-text: #9a3412;
+    --border-subtle: #d4d3cb;
+    --border-strong: #a1a09a;
   }
 
   body {
