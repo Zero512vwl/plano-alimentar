@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2f5d50">
+  <meta name="description" content="Gerador gratuito de plano alimentar semanal com cálculo de calorias, receitas práticas, lista de compras por setor e exportação em PDF.">
+  <title>Plano Alimentar: Cardápio, Receitas e Compras</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand-block">
+        <span class="brand-title">Plano Alimentar</span>
+        <span class="brand-sub">Cardápio semanal, receitas e compras</span>
+      </div>
+      <div class="header-actions" id="header-actions" hidden>
+        <button type="button" class="btn btn-secondary" id="btn-edit-profile">Alterar dados</button>
+        <button type="button" class="btn btn-primary" id="btn-export-pdf">Salvar em PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="container main-shell">
+    <!-- TELA 1: FORMULÁRIO DE ANAMNESE -->
+    <section id="intake-section" class="intake-section" aria-labelledby="intake-heading">
+      <div class="hero-intro">
+        <h1 id="intake-heading">Monte seu plano alimentar da semana</h1>
+        <p class="hero-lead">Preencha seus dados abaixo para calcular calorias, cardápio prático com reaproveitamento de preparos, lista de compras por setor e PDF pronto para imprimir.</p>
+      </div>
+
+      <div class="intake-tabs" role="tablist" aria-label="Etapas do preenchimento">
+        <button type="button" class="tab-btn is-active" id="intake-tab-btn-1" data-intake-tab="intake-step-1" role="tab" aria-selected="true">1. Dados, rotina e restrições</button>
+        <button type="button" class="tab-btn" id="intake-tab-btn-2" data-intake-tab="intake-step-2" role="tab" aria-selected="false">2. Alimentos que não gosta <span id="dislikes-badge" class="badge-count" hidden>0</span></button>
+      </div>
+
+      <form id="anamnese-form" class="anamnese-form" novalidate>
+        <div id="intake-step-1" class="intake-panel is-active">
+          <fieldset class="form-group-card">
+            <legend>1. Seus dados e objetivo</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="nome">Seu nome</label>
+                <input type="text" id="nome" name="nome" placeholder="Ex.: Maria ou João" required>
+              </div>
+
+              <div class="field">
+                <label for="objetivo">Objetivo principal</label>
+                <select id="objetivo" name="objetivo" required>
+                  <option value="emagrecimento">Emagrecimento (perder gordura)</option>
+                  <option value="recomposicao">Recomposição (perder gordura e ganhar firmeza)</option>
+                  <option value="manutencao">Manutenção (saúde e organização)</option>
+                  <option value="hipertrofia">Ganho de massa muscular</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="sexo">Sexo biológico (para cálculo metabólico)</label>
+                <select id="sexo" name="sexo" required>
+                  <option value="F">Feminino</option>
+                  <option value="M">Masculino</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="idade">Idade (anos)</label>
+                <input type="number" id="idade" name="idade" min="16" max="100" value="45" required>
+              </div>
+
+              <div class="field">
+                <label for="peso">Peso atual (kg)</label>
+                <input type="number" id="peso" name="peso" min="35" max="250" step="0.1" value="72" required>
+              </div>
+
+              <div class="field">
+                <label for="altura">Altura (cm)</label>
+                <input type="number" id="altura" name="altura" min="130" max="220" value="168" required>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-group-card">
+            <legend>2. Rotina de movimento e refeições</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="atividade">Nível de atividade física na semana</label>
+                <select id="atividade" name="atividade" required>
+                  <option value="sedentario">Pouco movimento (trabalho sentado, sem treino)</option>
+                  <option value="leve" selected>Leve (caminhadas ou treino 1 a 2x na semana)</option>
+                  <option value="moderado">Moderado (treino 3 a 4x na semana)</option>
+                  <option value="intenso">Intenso (treino 5x ou mais na semana)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="refeicoes">Quantas refeições faz por dia?</label>
+                <select id="refeicoes" name="refeicoes" required>
+                  <option value="3">3 refeições (Café, Almoço e Jantar)</option>
+                  <option value="4" selected>4 refeições (Café, Almoço, Lanche da tarde e Jantar)</option>
+                  <option value="5">5 refeições (inclui Lanche da manhã)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="variacao">Preferência de praticidade</label>
+                <select id="variacao" name="variacao">
+                  <option value="pratica" selected>Mais prático (repetir 2 opções na semana e congelar)</option>
+                  <option value="variada">Um pouco mais variado (alternar mais preparos)</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-group-card">
+            <legend>3. Restrições alimentares</legend>
+            <p class="field-hint">Marque alergias ou intolerâncias. Na próxima aba você poderá pesquisar alimentos específicos que não gosta.</p>
+            <div class="checkbox-grid">
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="sem_lactose">
+                <span>Sem lactose / leite</span>
+              </label>
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="sem_gluten">
+                <span>Sem glúten</span>
+              </label>
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="sem_carne_vermelha">
+                <span>Sem carne vermelha</span>
+              </label>
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="sem_peixe">
+                <span>Sem peixe / frutos do mar</span>
+              </label>
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="sem_ovo">
+                <span>Sem ovo</span>
+              </label>
+              <label class="check-pill">
+                <input type="checkbox" name="restricoes" value="vegetariano">
+                <span>Vegetariano (sem carnes)</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="form-nav-row">
+            <button type="button" class="btn btn-secondary" id="btn-go-step-2">Próximo: O que não gosto de comer</button>
+            <button type="submit" class="btn btn-primary">Gerar plano direto</button>
+          </div>
+        </div>
+
+        <div id="intake-step-2" class="intake-panel" hidden>
+          <fieldset class="form-group-card">
+            <legend>O que você não gosta de comer?</legend>
+            <p class="field-hint">Pesquise e marque os alimentos comuns que você prefere evitar. O cardápio será montado sem eles.</p>
+
+            <div class="food-search-bar">
+              <div class="field">
+                <label for="food-search">Pesquisar alimento</label>
+                <input type="search" id="food-search" placeholder="Digite para filtrar: ex. mamão, frango, brócolis, aveia">
+              </div>
+              <div class="food-search-meta">
+                <span id="food-selected-summary" class="shopping-progress">0 selecionados</span>
+                <button type="button" class="btn btn-secondary btn-small" id="btn-clear-dislikes">Limpar seleção</button>
+              </div>
+            </div>
+
+            <div id="dislikes-picker" class="dislikes-picker" aria-live="polite"></div>
+
+            <div class="field field-full">
+              <label for="aversoes">Outro alimento que não está na lista (opcional, separado por vírgula)</label>
+              <input type="text" id="aversoes" name="aversoes" placeholder="Ex.: coentro, quiabo, berinjela">
+            </div>
+          </fieldset>
+
+          <div class="clinical-note" role="note">
+            <strong>Aviso importante:</strong> este aplicativo organiza um cardápio educativo com base nas tabelas nutricionais TACO/TBCA e USDA. Não substitui consulta médica ou nutricional presencial caso você tenha condições clínicas específicas ou use medicamentos contínuos.
+          </div>
+
+          <div id="form-error" class="form-error" role="alert" hidden></div>
+
+          <div class="form-nav-row">
+            <button type="button" class="btn btn-secondary" id="btn-back-step-1">Voltar para dados</button>
+            <button type="submit" class="btn btn-primary btn-large">Gerar meu plano alimentar</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- TELA 2: PAINEL DO PLANO GERADO -->
+    <section id="plan-section" class="plan-section" hidden aria-labelledby="plan-heading">
+      <!-- Cabeçalho de impressão (aparece só no PDF) -->
+      <div class="print-only-header">
+        <h1>Plano Alimentar Semanal</h1>
+        <p id="print-subtitle"></p>
+      </div>
+
+      <div class="plan-top-bar">
+        <div>
+          <h1 id="plan-heading">Seu plano semanal</h1>
+          <p id="plan-profile-summary" class="plan-summary-text"></p>
+        </div>
+      </div>
+
+      <!-- Resumo de Metas vs Média Real -->
+      <section class="targets-section" aria-label="Metas diárias de calorias e nutrientes">
+        <div class="metrics-grid" id="metrics-grid"></div>
+        <p class="transparency-note" id="transparency-note"></p>
+      </section>
+
+      <!-- Navegação por abas (ocultada na impressão) -->
+      <nav class="tab-nav no-print" aria-label="Seções do plano alimentar">
+        <button type="button" class="tab-btn is-active" data-tab="tab-cardapio" aria-selected="true">Cardápio da semana</button>
+        <button type="button" class="tab-btn" data-tab="tab-receitas" aria-selected="false">Receitas e preparo</button>
+        <button type="button" class="tab-btn" data-tab="tab-congelados" aria-selected="false">Lotes e freezer</button>
+        <button type="button" class="tab-btn" data-tab="tab-compras" aria-selected="false">Lista de compras</button>
+      </nav>
+
+      <!-- ABA 1: CARDÁPIO -->
+      <section id="tab-cardapio" class="tab-panel is-active">
+        <div class="day-selector no-print" id="day-selector" role="tablist" aria-label="Dias da semana"></div>
+        <div id="day-detail-container" class="day-detail-container"></div>
+        <!-- Visão completa dos 7 dias usada apenas na impressão/PDF -->
+        <div id="print-all-days" class="print-only-block"></div>
+      </section>
+
+      <!-- ABA 2: RECEITAS -->
+      <section id="tab-receitas" class="tab-panel" hidden>
+        <div class="section-head">
+          <h2>Receitas da semana (quantidades ajustadas para você)</h2>
+          <p class="section-sub">Ingredientes em peso cru ou pronto conforme indicado. Itens marcados como estimativa usam medida caseira padrão.</p>
+        </div>
+        <div id="recipes-container" class="recipes-grid"></div>
+      </section>
+
+      <!-- ABA 3: CONGELADOS -->
+      <section id="tab-congelados" class="tab-panel" hidden>
+        <div class="section-head">
+          <h2>Preparos em lote para congelar</h2>
+          <p class="section-sub">Cozinhe uma vez, separe em potes por porção e descongele conforme os dias do cardápio.</p>
+        </div>
+        <div id="freezer-container" class="freezer-list"></div>
+      </section>
+
+      <!-- ABA 4: LISTA DE COMPRAS -->
+      <section id="tab-compras" class="tab-panel" hidden>
+        <div class="section-head shopping-head">
+          <div>
+            <h2>Lista de compras da semana</h2>
+            <p class="section-sub">Quantidades somadas em peso de compra, separadas por setor. Suas marcações ficam salvas neste aparelho.</p>
+          </div>
+          <div class="shopping-controls no-print">
+            <span id="shopping-progress" class="shopping-progress">0 de 0 marcados</span>
+            <button type="button" class="btn btn-secondary btn-small" id="btn-clear-checks">Limpar marcações</button>
+          </div>
+        </div>
+        <div id="shopping-container" class="shopping-columns"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer no-print">
+    <div class="container footer-inner">
+      <p>Referências nutricionais: TACO/TBCA e USDA. Os dados preenchidos ficam salvos apenas no seu próprio navegador.</p>
+    </div>
+  </footer>
+
+  <script src="./recipes.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
