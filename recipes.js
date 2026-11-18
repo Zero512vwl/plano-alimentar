@@ -709,5 +709,297 @@ window.RECIPE_BANK = [
       "Bata o ovo com a tapioca e o queijo picado e doure na frigideira antiaderente."
     ],
     notes: "Sem glúten e alta saciedade para a tarde."
+  },
+
+  // ==================== OPÇÕES COM WHEY PROTEIN (CAFÉ, ALMOÇO/JANTAR E LANCHE) ====================
+  {
+    id: "cafe-panqueca-whey",
+    name: "Panqueca proteica de banana, aveia e Whey Protein",
+    category: "cafe",
+    tags: ["whey", "ovo"],
+    freezable: false,
+    prepTime: "8 min",
+    thawNote: "Preparo na hora em fogo baixo.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 50, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "fruit" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 30, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Amasse a banana e misture o ovo, a aveia, o scoop de Whey Protein e canela até formar uma massa cremosa.",
+      "Doure em frigideira antiaderente em fogo baixo por 2 minutos de cada lado."
+    ],
+    notes: "1 scoop de Whey (30g) fornece ~120 kcal e 24g de proteína. Use fogo baixo para não ressecar."
+  },
+  {
+    id: "cafe-vitamina-whey-morango",
+    name: "Vitamina matinal de Whey Protein com morango, banana e aveia",
+    category: "cafe",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "4 min",
+    thawNote: "Bater na hora.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 220, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Morango fresco", sector: "Hortifrúti", grams: 100, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 25, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Bata todos os ingredientes no liquidificador com gelo por 40 segundos até ficar bem cremoso."
+    ],
+    notes: "Café da manhã rápido para beber em 3 minutos com alta saciedade."
+  },
+  {
+    id: "cafe-mingau-whey",
+    name: "Mingau proteico de aveia com Whey Protein e pasta de amendoim",
+    category: "cafe",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "6 min",
+    thawNote: "Adicione o Whey após desligar o fogo.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
+      { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 200, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Cozinhe a aveia com o leite/bebida vegetal por 3 minutos até engrossar e desligue o fogo.",
+      "Misture o scoop de Whey Protein vigorosamente e finalize com a pasta de amendoim."
+    ],
+    notes: "Misturar o Whey com o fogo desligado preserva a textura cremosa sem empelotar."
+  },
+  {
+    id: "alm-shake-substituto-whey",
+    name: "Shake substituto de refeição com Whey Protein, aveia, banana e pasta de amendoim",
+    category: "principal",
+    tags: ["whey", "vegetariano"],
+    freezable: false,
+    prepTime: "4 min",
+    thawNote: "Bater na hora (substitui almoço ou jantar corrido).",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 35, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: true, isBatch: false, unitHint: "aprox. 1 scoop e meio", role: "core" },
+      { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 260, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 45, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 110, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Coloque o leite/bebida vegetal, o Whey Protein, a aveia, a fruta e a pasta de amendoim no liquidificador.",
+      "Bata com gelo por 1 minuto até formar um shake espesso e nutritivo."
+    ],
+    notes: "Combina proteína rápida (Whey), fibras (aveia) e gorduras boas (amendoim) para substituir almoço ou jantar sem dar fome."
+  },
+  {
+    id: "alm-bowl-whey-iogurte",
+    name: "Tigela proteica rápida de iogurte, Whey Protein, aveia, fruta e castanhas",
+    category: "principal",
+    tags: ["whey", "lactose", "vegetariano"],
+    freezable: false,
+    prepTime: "5 min",
+    thawNote: "Montagem rápida sem fogão para almoço ou jantar leve.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 100, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Amendoim torrado sem sal / Castanha-do-pará", sector: "Mercearia & Grãos", grams: 20, kcal100: 606, p100: 22.0, c100: 15.0, g100: 53.0, fib100: 7.5, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Misture o scoop de Whey Protein no iogurte natural até virar um creme tipo mousse.",
+      "Adicione a aveia, a fruta picada e as castanhas por cima."
+    ],
+    notes: "Ótima opção de jantar rápido em noites quentes ou sem tempo de cozinhar."
+  },
+  {
+    id: "alm-crepioca-shake-whey",
+    name: "Crepioca de queijo minas acompanhada de Shake de Whey Protein",
+    category: "principal",
+    tags: ["whey", "ovo", "lactose", "vegetariano"],
+    freezable: false,
+    prepTime: "8 min",
+    thawNote: "Preparo rápido na hora.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
+      { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 100, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "2 unidades", role: "core" },
+      { name: "Goma de tapioca hidratada", sector: "Mercearia & Grãos", grams: 55, kcal100: 240, p100: 0.2, c100: 59.6, g100: 0, fib100: 0.5, scalable: true, isBatch: false, role: "core" },
+      { name: "Queijo minas frescal", sector: "Laticínios & Ovos", grams: 40, kcal100: 264, p100: 17.4, c100: 3.2, g100: 20.2, fib100: 0, scalable: true, isBatch: false, role: "core" },
+      { name: "Tomate e alface (salada)", sector: "Hortifrúti", grams: 100, kcal100: 16, p100: 1.0, c100: 3.1, g100: 0.2, fib100: 1.4, scalable: false, isBatch: false, role: "veg" }
+    ],
+    steps: [
+      "Prepare a crepioca batendo os ovos com a tapioca e recheando com queijo minas e tomate.",
+      "Acompanhe com 1 scoop de Whey Protein batido em 200 ml de água bem gelada."
+    ],
+    notes: "Almoço ou jantar salgado prático que bate facilmente a meta de proteínas com o Whey."
+  },
+  {
+    id: "lan-mousse-whey-cacau",
+    name: "Mousse proteico de iogurte natural com Whey Protein e cacau",
+    category: "lanche",
+    tags: ["whey", "lactose"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Montagem na hora (pode gelar por 10 min).",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
+      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 57.9, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" }
+    ],
+    steps: [
+      "Misture o scoop de Whey Protein e o cacau em pó no iogurte natural até virar uma mousse cremosa.",
+      "Consuma gelado no café da tarde."
+    ],
+    notes: "Mata a vontade de doce à tarde com ~32g de proteína e poucas calorias."
+  },
+  {
+    id: "lan-shake-whey-banana",
+    name: "Shake rápido de café da tarde com Whey Protein, banana e aveia",
+    category: "lanche",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Bater ou agitar na coqueteleira.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "fruit" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 20, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Bata o Whey Protein com 200 ml de água gelada, a banana e a aveia (ou tome o Whey na coqueteleira e coma a banana com aveia)."
+    ],
+    notes: "Sem lactose (usando Whey Isolado ou água) e super prático para levar ao trabalho."
+  },
+  {
+    id: "lan-whey-fruta-castanha",
+    name: "Whey Protein na coqueteleira acompanhado de maçã e castanhas",
+    category: "lanche",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "2 min",
+    thawNote: "Zero preparo de cozinha.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
+      { name: "Maçã fuji", sector: "Hortifrúti", grams: 120, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Amendoim torrado sem sal / Castanha-do-pará", sector: "Mercearia & Grãos", grams: 15, kcal100: 606, p100: 22.0, c100: 15.0, g100: 53.0, fib100: 7.5, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Dissolva 1 scoop de Whey Protein em 200 ml de água gelada na coqueteleira e consuma com a fruta e as castanhas."
+    ],
+    notes: "Ideal para a correria da tarde fora de casa."
+  },
+
+  // ==================== CEIA NOTURNA (FOME À NOITE / MADRUGADA — COM E SEM WHEY) ====================
+  {
+    id: "ceia-pudim-chia-whey",
+    name: "Pudim noturno de chia com Whey Protein e leite vegetal",
+    category: "ceia",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Deixar hidratando na geladeira por 20 min ou desde cedo.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 150, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
+      { name: "Semente de chia", sector: "Mercearia & Grãos", grams: 15, kcal100: 486, p100: 16.5, c100: 42.1, g100: 30.7, fib100: 34.4, scalable: false, estimated: true, role: "core" }
+    ],
+    steps: [
+      "Dissolva o Whey Protein no leite/bebida vegetal, misture a semente de chia e deixe firmar na geladeira.",
+      "Consuma gelado quando bater fome à noite ou de madrugada."
+    ],
+    notes: "A chia forma um gel rico em fibras que retarda a digestão e segura a fome durante toda a madrugada."
+  },
+  {
+    id: "ceia-mingau-whey-canela",
+    name: "Mingau quente relaxante de aveia com Whey Protein e canela",
+    category: "ceia",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "5 min",
+    thawNote: "Preparo rápido no micro-ondas ou fogão.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 25, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
+      { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 150, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Aqueça o leite/bebida vegetal com a aveia por 1 minuto e meio no micro-ondas (ou fogão).",
+      "Misture o scoop de Whey Protein fora do fogo e polvilhe canela."
+    ],
+    notes: "Ótimo para quem fica acordado até tarde e sente vontade de comer algo quente e doce à noite."
+  },
+  {
+    id: "ceia-creme-iogurte-whey",
+    name: "Creme noturno de iogurte natural com Whey Protein e morangos",
+    category: "ceia",
+    tags: ["whey", "lactose"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Montagem na hora.",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 25, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop raso (100 kcal)", role: "core" },
+      { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
+      { name: "Morango fresco", sector: "Hortifrúti", grams: 80, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" }
+    ],
+    steps: [
+      "Misture o Whey Protein ao iogurte natural e finalize com os morangos picados."
+    ],
+    notes: "Ceia leve, proteica e refrescante com baixíssimo teor de carboidratos."
+  },
+  {
+    id: "ceia-iogurte-castanhas",
+    name: "Iogurte natural com chia e castanhas (Ceia sem Whey)",
+    category: "ceia",
+    tags: ["lactose"],
+    freezable: false,
+    prepTime: "2 min",
+    thawNote: "Pronto na hora.",
+    ingredients: [
+      { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
+      { name: "Semente de chia", sector: "Mercearia & Grãos", grams: 10, kcal100: 486, p100: 16.5, c100: 42.1, g100: 30.7, fib100: 34.4, scalable: false, estimated: true, role: "core" },
+      { name: "Amendoim torrado sem sal / Castanha-do-pará", sector: "Mercearia & Grãos", grams: 15, kcal100: 606, p100: 22.0, c100: 15.0, g100: 53.0, fib100: 7.5, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Misture a chia e as castanhas picadas ao iogurte natural."
+    ],
+    notes: "Opção sem Whey com gorduras boas e fibras para segurar a fome de madrugada."
+  },
+  {
+    id: "ceia-abacate-cacau",
+    name: "Creme noturno de abacate com cacau 100% (Ceia sem Whey e sem lactose)",
+    category: "ceia",
+    tags: [],
+    freezable: false,
+    prepTime: "4 min",
+    thawNote: "Preparo na hora.",
+    ingredients: [
+      { name: "Abacate maduro", sector: "Hortifrúti", grams: 100, kcal100: 96, p100: 1.2, c100: 6.0, g100: 8.4, fib100: 6.3, scalable: true, isBatch: false, role: "core" },
+      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 57.9, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" },
+      { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 15, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Amasse bem o abacate com um garfo (ou mixer) junto com o cacau 100% e a aveia (adicione gotas de adoçante natural se desejar)."
+    ],
+    notes: "Rico em gorduras boas e fibras, não eleva a glicose antes de dormir."
+  },
+  {
+    id: "ceia-ovos-azeite",
+    name: "Ovos cozidos ou mexidos com ervas e tomate (Ceia salgada sem Whey)",
+    category: "ceia",
+    tags: ["ovo"],
+    freezable: false,
+    prepTime: "7 min",
+    thawNote: "Preparo na hora ou ovos já cozidos na geladeira.",
+    ingredients: [
+      { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 100, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "2 unidades", role: "core" },
+      { name: "Tomate e alface (salada)", sector: "Hortifrúti", grams: 80, kcal100: 16, p100: 1.0, c100: 3.1, g100: 0.2, fib100: 1.4, scalable: false, isBatch: false, role: "veg" },
+      { name: "Azeite de oliva (1 fio)", sector: "Temperos / Conferir em Casa", grams: 3, kcal100: 884, p100: 0, c100: 0, g100: 100, fib100: 0, scalable: false, estimated: true, isBatch: false }
+    ],
+    steps: [
+      "Cozinhe ou mexa os 2 ovos com orégano e um fio de azeite e sirva com tomate picado."
+    ],
+    notes: "Ceia salgada quase zero carboidrato para quem sente fome de madrugada."
   }
 ];

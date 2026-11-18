@@ -23,6 +23,7 @@
         { label: "Carne bovina / Patinho", value: "patinho" },
         { label: "Peixe / Tilápia", value: "tilapia" },
         { label: "Ovo", value: "ovo" },
+        { label: "Whey Protein (suplemento)", value: "whey" },
         { label: "Grão-de-bico", value: "grao-de-bico" },
         { label: "Lentilha", value: "lentilha" }
       ]
@@ -49,6 +50,7 @@
         { label: "Banana", value: "banana" },
         { label: "Maçã", value: "maca" },
         { label: "Morango", value: "morango" },
+        { label: "Abacate", value: "abacate" },
         { label: "Brócolis", value: "brocolis" },
         { label: "Abobrinha", value: "abobrinha" },
         { label: "Cenoura", value: "cenoura" },
@@ -265,13 +267,17 @@
           !isPrint && options.length > 1
             ? `<div class="meal-option-pills no-print" role="group" aria-label="Opções da refeição">
                 ${options
-                  .map(
-                    (opt, optIdx) => `
+                  .map((opt, optIdx) => {
+                    const hasWhey = (opt.tags || []).includes("whey");
+                    const labelPrefix = hasWhey
+                      ? `Opção ${optIdx + 1} com Whey`
+                      : `Opção ${optIdx + 1}`;
+                    return `
                   <button type="button" class="opt-pill ${optIdx === activeOptIdx ? "is-active" : ""}" data-day-idx="${dayIdx}" data-meal-idx="${mealIdx}" data-opt-idx="${optIdx}">
-                    Opção ${optIdx + 1} (${opt.macros.kcal} kcal)
+                    ${labelPrefix} (${opt.macros.kcal} kcal)
                   </button>
-                `
-                  )
+                `;
+                  })
                   .join("")}
               </div>`
             : "";
@@ -287,10 +293,12 @@
                 <ul class="alt-list">
                   ${otherOptions
                     .map(({ opt, idx }) => {
+                      const hasWhey = (opt.tags || []).includes("whey");
+                      const wheyTag = hasWhey ? " [Com Whey]" : "";
                       const shortIngs = opt.ingredients
-                        .map((i) => `${i.grams}g ${escapeHtml(i.name)}`)
+                        .map((i) => `${i.grams}g ${escapeHtml(i.name)} (${i.kcal || 0} kcal)`)
                         .join(", ");
-                      return `<li><strong>Opção ${idx + 1}: ${escapeHtml(opt.name)}</strong> (${opt.macros.kcal} kcal | P ${opt.macros.protein}g | C ${opt.macros.carbs}g | G ${opt.macros.fat}g) <span class="alt-ings">${shortIngs}</span></li>`;
+                      return `<li><strong>Opção ${idx + 1}${wheyTag}: ${escapeHtml(opt.name)}</strong> (${opt.macros.kcal} kcal | P ${opt.macros.protein}g | C ${opt.macros.carbs}g | G ${opt.macros.fat}g) <span class="alt-ings">${shortIngs}</span></li>`;
                     })
                     .join("")}
                 </ul>

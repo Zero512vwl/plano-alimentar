@@ -209,27 +209,23 @@ window.DietEngine = (function () {
   }
 
   function getSlotTemplate(mealCount) {
-    if (mealCount === 3) {
-      return [
-        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.26 },
-        { key: "almoco", label: "Almoço", category: "principal", share: 0.40 },
-        { key: "jantar", label: "Jantar", category: "principal", share: 0.34 }
-      ];
-    }
     if (mealCount === 5) {
       return [
-        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.22 },
-        { key: "lanche1", label: "Lanche da manhã", category: "lanche", share: 0.12 },
-        { key: "almoco", label: "Almoço", category: "principal", share: 0.30 },
-        { key: "lanche2", label: "Lanche da tarde", category: "lanche", share: 0.12 },
-        { key: "jantar", label: "Jantar", category: "principal", share: 0.24 }
+        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.20 },
+        { key: "lanche1", label: "Lanche da manhã", category: "lanche", share: 0.10 },
+        { key: "almoco", label: "Almoço", category: "principal", share: 0.28 },
+        { key: "lanche2", label: "Café da tarde", category: "lanche", share: 0.12 },
+        { key: "jantar", label: "Jantar", category: "principal", share: 0.20 },
+        { key: "ceia", label: "Ceia noturna (fome à noite ou madrugada)", category: "ceia", share: 0.10 }
       ];
     }
+    // Tanto para 3 quanto 4 refeições, exibe Café da manhã, Almoço, Café da tarde, Jantar e Ceia noturna
     return [
-      { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.22 },
-      { key: "almoco", label: "Almoço", category: "principal", share: 0.34 },
-      { key: "lanche", label: "Lanche da tarde", category: "lanche", share: 0.14 },
-      { key: "jantar", label: "Jantar", category: "principal", share: 0.30 }
+      { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.20 },
+      { key: "almoco", label: "Almoço", category: "principal", share: 0.30 },
+      { key: "lanche", label: "Café da tarde", category: "lanche", share: 0.13 },
+      { key: "jantar", label: "Jantar", category: "principal", share: 0.27 },
+      { key: "ceia", label: "Ceia noturna (fome à noite ou madrugada)", category: "ceia", share: 0.10 }
     ];
   }
 
@@ -370,14 +366,16 @@ window.DietEngine = (function () {
     };
 
     const isPratica = profile.variacao === "pratica";
-    const poolCafe = filterByCat("cafe").slice(0, isPratica ? 4 : 12);
-    const poolPrincipal = filterByCat("principal").slice(0, isPratica ? 6 : 16);
-    const poolLanche = filterByCat("lanche").slice(0, isPratica ? 4 : 10);
+    const poolCafe = filterByCat("cafe");
+    const poolPrincipal = filterByCat("principal");
+    const poolLanche = filterByCat("lanche");
+    const poolCeia = filterByCat("ceia");
 
     const poolsByCategory = {
       cafe: poolCafe,
       principal: poolPrincipal,
-      lanche: poolLanche
+      lanche: poolLanche,
+      ceia: poolCeia
     };
 
     const slots = getSlotTemplate(Number(profile.refeicoes) || 4);
@@ -388,50 +386,82 @@ window.DietEngine = (function () {
       return scaleRecipe(recipe, factor);
     }
 
+    // Monta 3 opções para a refeição garantindo opções sem Whey + pelo menos 1 opção com Whey (se disponível)
+    function buildSlotOptions(pool, solidCursor, wheyCursor, targetSlotKcal, preferWheyFirst) {
+      const solidList = pool.filter((r) => !(r.tags || []).includes("whey"));
+      const wheyList = pool.filter((r) => (r.tags || []).includes("whey"));
+      const chosen = [];
+
+      const addUnique = (candidate) => {
+        if (candidate && !chosen.some((c) => c.id === candidate.id)) {
+          chosen.push(scaleForTarget(candidate, targetSlotKcal));
+        }
+      };
+
+      if (preferWheyFirst) {
+        if (wheyList.length > 0) addUnique(wheyList[wheyCursor % wheyList.length]);
+        if (solidList.length > 0) addUnique(solidList[solidCursor % solidList.length]);
+        if (solidList.length > 1) addUnique(solidList[(solidCursor + 1) % solidList.length]);
+        if (wheyList.length > 1 && chosen.length < 3) addUnique(wheyList[(wheyCursor + 1) % wheyList.length]);
+      } else {
+        if (solidList.length > 0) addUnique(solidList[solidCursor % solidList.length]);
+        if (solidList.length > 1) addUnique(solidList[(solidCursor + (isPratica ? 1 : 2)) % solidList.length]);
+        if (wheyList.length > 0) addUnique(wheyList[wheyCursor % wheyList.length]);
+      }
+
+      for (let k = 0; k < pool.length && chosen.length < Math.min(3, pool.length); k++) {
+        addUnique(pool[(solidCursor + k) % pool.length]);
+      }
+
+      return chosen;
+    }
+
     let cafeCursor = 0;
     let lancheCursor = 0;
+    let ceiaCursor = 0;
 
     const days = DAYS_OF_WEEK.map((dayName, dayIndex) => {
-      // Escolhe almoço e jantar garantindo que NUNCA sejam iguais no mesmo dia nem repitam o dia anterior
-      const almocoIdx = (dayIndex * 2) % poolPrincipal.length;
-      let jantarIdx = (dayIndex * 2 + 1) % poolPrincipal.length;
-      if (jantarIdx === almocoIdx && poolPrincipal.length > 1) {
-        jantarIdx = (almocoIdx + 1) % poolPrincipal.length;
+      const solidPrincipals = poolPrincipal.filter((r) => !(r.tags || []).includes("whey"));
+      const mainCount = Math.max(1, solidPrincipals.length);
+      const almocoIdx = (dayIndex * 2) % mainCount;
+      let jantarIdx = (dayIndex * 2 + 1) % mainCount;
+      if (jantarIdx === almocoIdx && mainCount > 1) {
+        jantarIdx = (almocoIdx + 1) % mainCount;
       }
 
       const meals = slots.map((slot) => {
-        const pool = poolsByCategory[slot.category];
+        const pool = poolsByCategory[slot.category] || [];
         let pickIndex = 0;
+        let wheyIdx = dayIndex;
 
         if (slot.key === "almoco") {
           pickIndex = almocoIdx;
+          wheyIdx = dayIndex;
         } else if (slot.key === "jantar") {
           pickIndex = jantarIdx;
+          wheyIdx = dayIndex + 1;
         } else if (slot.category === "cafe") {
-          pickIndex = cafeCursor % pool.length;
+          pickIndex = cafeCursor;
+          wheyIdx = cafeCursor;
           cafeCursor += 1;
+        } else if (slot.category === "ceia") {
+          pickIndex = ceiaCursor;
+          wheyIdx = ceiaCursor;
+          ceiaCursor += 1;
         } else {
-          pickIndex = lancheCursor % pool.length;
+          pickIndex = lancheCursor;
+          wheyIdx = lancheCursor;
           lancheCursor += 1;
         }
 
         const slotTargetKcal = targets.kcal * slot.share;
-        const optionCount = Math.min(3, pool.length);
-        const options = [];
-        for (let k = 0; k < optionCount; k++) {
-          const idx = (pickIndex + k * 2 + (k > 0 ? 1 : 0)) % pool.length;
-          const candidate = pool[idx];
-          if (!options.some((o) => o.id === candidate.id)) {
-            options.push(scaleForTarget(candidate, slotTargetKcal));
-          }
-        }
-        // Completa até 3 opções distintas se necessário
-        for (let k = 0; k < pool.length && options.length < optionCount; k++) {
-          const candidate = pool[(pickIndex + k) % pool.length];
-          if (!options.some((o) => o.id === candidate.id)) {
-            options.push(scaleForTarget(candidate, slotTargetKcal));
-          }
-        }
+        const options = buildSlotOptions(
+          pool,
+          pickIndex,
+          wheyIdx,
+          slotTargetKcal,
+          slot.category === "ceia" && dayIndex % 2 === 0
+        );
 
         return {
           slotKey: slot.key,
@@ -478,7 +508,7 @@ window.DietEngine = (function () {
     return recomputePlanAggregates(plan);
   }
 
-  // Permite girar as 3 opções de uma refeição específica para novas receitas do banco
+  // Permite girar as 3 opções de uma refeição específica mantendo opção sem Whey + opção com Whey
   function swapMealInPlan(plan, dayIndex, mealIndex) {
     const day = plan.days[dayIndex];
     if (!day || !day.meals[mealIndex]) return plan;
@@ -487,18 +517,26 @@ window.DietEngine = (function () {
     const pool = plan.poolsByCategory[meal.category] || [];
     if (pool.length <= 1) return plan;
 
-    const nextPoolIndex = ((meal.poolIndex || 0) + 1) % pool.length;
-    const slotTargetKcal = plan.targets.kcal * (meal.share || 0.25);
-    const optionCount = Math.min(3, pool.length);
+    const nextPoolIndex = (meal.poolIndex || 0) + 1;
+    const slotTargetKcal = plan.targets.kcal * (meal.share || 0.20);
+    const solidList = pool.filter((r) => !(r.tags || []).includes("whey"));
+    const wheyList = pool.filter((r) => (r.tags || []).includes("whey"));
     const options = [];
 
-    for (let k = 0; k < pool.length && options.length < optionCount; k++) {
-      const candidate = pool[(nextPoolIndex + k) % pool.length];
-      if (!options.some((o) => o.id === candidate.id)) {
+    const addScaled = (candidate) => {
+      if (candidate && !options.some((o) => o.id === candidate.id)) {
         const baseMacros = computeRecipeMacros(candidate.ingredients);
         const factor = baseMacros.kcal > 0 ? slotTargetKcal / baseMacros.kcal : 1;
         options.push(scaleRecipe(candidate, factor));
       }
+    };
+
+    if (solidList.length > 0) addScaled(solidList[nextPoolIndex % solidList.length]);
+    if (solidList.length > 1) addScaled(solidList[(nextPoolIndex + 1) % solidList.length]);
+    if (wheyList.length > 0) addScaled(wheyList[nextPoolIndex % wheyList.length]);
+
+    for (let k = 0; k < pool.length && options.length < Math.min(3, pool.length); k++) {
+      addScaled(pool[(nextPoolIndex + k) % pool.length]);
     }
 
     meal.poolIndex = nextPoolIndex;
