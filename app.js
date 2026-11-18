@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v15";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v16";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -183,6 +183,18 @@
       cb.checked = doencasSet.has(cb.value);
     });
 
+    if (form.nivel_renal) {
+      if (profile.nivel_renal && profile.nivel_renal !== "nenhuma") {
+        form.nivel_renal.value = profile.nivel_renal;
+        const chkRenal = document.getElementById("chk_renal_alerta");
+        if (chkRenal) chkRenal.checked = true;
+      } else if (doencasSet.has("renal_alerta")) {
+        form.nivel_renal.value = "drc_conservador";
+      } else {
+        form.nivel_renal.value = "nenhuma";
+      }
+    }
+
     selectedDislikes = new Set(profile.aversoesSelecionadas || []);
     renderDislikesPicker();
     updateSchedulePreview();
@@ -198,6 +210,11 @@
     form.querySelectorAll('input[name="doencas"]:checked').forEach((cb) => {
       doencas.push(cb.value);
     });
+
+    const nivelRenal = form.nivel_renal ? form.nivel_renal.value : "nenhuma";
+    if (nivelRenal !== "nenhuma" && !doencas.includes("renal_alerta")) {
+      doencas.push("renal_alerta");
+    }
 
     return {
       nome: form.nome.value.trim(),
@@ -222,6 +239,7 @@
       customMealHours: { ...customMealHours },
       restricoes,
       doencas,
+      nivel_renal: nivelRenal,
       aversoesSelecionadas: Array.from(selectedDislikes),
       aversoes: form.aversoes.value.trim()
     };
@@ -750,15 +768,24 @@
     if (tTreino && document.activeElement !== tTreino) tTreino.value = fmt(profile.hora_treino);
     if (tDorme && document.activeElement !== tDorme) tDorme.value = fmt(profile.hora_dorme);
 
-    const isFora = profile.rotina_trabalho === "fora_dia_todo";
+    const isFora =
+      profile.rotina_trabalho === "fora_dia_todo" ||
+      profile.rotina_trabalho === "fora_meio_periodo";
     const wrapInicio = document.getElementById("wrap_trabalho_inicio");
     const wrapFim = document.getElementById("wrap_trabalho_fim");
+    const wrapArmazenamento = document.getElementById("wrap_armazenamento_trabalho");
     if (wrapInicio) wrapInicio.classList.toggle("is-dimmed", !isFora);
     if (wrapFim) wrapFim.classList.toggle("is-dimmed", !isFora);
+    if (wrapArmazenamento) wrapArmazenamento.classList.toggle("is-dimmed", !isFora);
 
     const hasWorkout = profile.atividade !== "sedentario";
     const wrapTreino = document.getElementById("wrap_hora_treino");
     if (wrapTreino) wrapTreino.classList.toggle("is-dimmed", !hasWorkout);
+
+    const wrapNivelRenal = document.getElementById("wrap_nivel_renal");
+    if (wrapNivelRenal) {
+      wrapNivelRenal.classList.toggle("is-active", profile.nivel_renal !== "nenhuma");
+    }
 
     const strip = document.getElementById("schedule-preview-strip");
     if (strip && window.DietEngine.computeDailySchedule) {
@@ -881,10 +908,42 @@
       if (el) {
         el.addEventListener("change", () => {
           customMealHours = {};
+          if (id === "rotina_trabalho" && form.armazenamento_trabalho) {
+            const val = el.value;
+            if (val === "nao_trabalha" || val === "casa") {
+              form.armazenamento_trabalho.value = "em_casa";
+            } else if (form.armazenamento_trabalho.value === "em_casa") {
+              form.armazenamento_trabalho.value = "geladeira_micro";
+            }
+            if (val === "fora_meio_periodo" && form.trabalho_inicio && form.trabalho_fim) {
+              if (Number(form.trabalho_inicio.value) === 7 && Number(form.trabalho_fim.value) === 17) {
+                form.trabalho_inicio.value = "8";
+                form.trabalho_fim.value = "14";
+              }
+            }
+          }
           updateSchedulePreview();
         });
       }
     });
+
+    const chkRenal = document.getElementById("chk_renal_alerta");
+    const selNivelRenal = document.getElementById("nivel_renal");
+    if (chkRenal && selNivelRenal) {
+      chkRenal.addEventListener("change", () => {
+        if (chkRenal.checked && selNivelRenal.value === "nenhuma") {
+          selNivelRenal.value = "drc_conservador";
+        } else if (!chkRenal.checked) {
+          selNivelRenal.value = "nenhuma";
+        }
+        updateSchedulePreview();
+      });
+
+      selNivelRenal.addEventListener("change", () => {
+        chkRenal.checked = selNivelRenal.value !== "nenhuma";
+        updateSchedulePreview();
+      });
+    }
 
     updateSchedulePreview();
   }

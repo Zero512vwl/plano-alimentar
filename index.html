@@ -17,8 +17,8 @@
     })();
   </script>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="manifest" href="./manifest.json?v=15">
-  <link rel="stylesheet" href="./styles.css?v=15">
+  <link rel="manifest" href="./manifest.json?v=16">
+  <link rel="stylesheet" href="./styles.css?v=16">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
@@ -139,14 +139,17 @@
               <div class="field">
                 <label for="rotina_trabalho">Rotina de trabalho</label>
                 <select id="rotina_trabalho" name="rotina_trabalho">
-                  <option value="casa" selected>Em casa ou horário flexível</option>
+                  <option value="nao_trabalha">Não trabalha (em casa, estudante ou aposentado)</option>
+                  <option value="casa" selected>Não trabalha fora (Home office / horário flexível)</option>
+                  <option value="fora_meio_periodo">Trabalha fora meio período</option>
                   <option value="fora_dia_todo">Trabalha fora o dia inteiro</option>
                 </select>
               </div>
 
-              <div class="field">
+              <div class="field" id="wrap_armazenamento_trabalho">
                 <label for="armazenamento_trabalho">Comida no trabalho</label>
                 <select id="armazenamento_trabalho" name="armazenamento_trabalho">
+                  <option value="em_casa">Não leva comida (faz as refeições em casa)</option>
                   <option value="geladeira_micro" selected>Tem geladeira e micro-ondas</option>
                   <option value="so_geladeira">Só geladeira ou bolsa térmica</option>
                   <option value="mochila_sem_geladeira">Sem geladeira (leva na mochila)</option>
@@ -262,9 +265,22 @@
                 <span>Hipotireoidismo</span>
               </label>
               <label class="check-pill">
-                <input type="checkbox" name="doencas" value="renal_alerta">
+                <input type="checkbox" name="doencas" value="renal_alerta" id="chk_renal_alerta">
                 <span>Doença renal crônica</span>
               </label>
+            </div>
+
+            <div class="renal-stage-box" id="wrap_nivel_renal">
+              <div class="field">
+                <label for="nivel_renal">Estágio / Nível da Doença Renal Crônica (adapta proteína, potássio, fósforo e sódio conforme a fase):</label>
+                <select id="nivel_renal" name="nivel_renal">
+                  <option value="nenhuma" selected>Não possui doença renal</option>
+                  <option value="drc_leve">Estágios 1 e 2 (Leve: proteína controlada 0,8 a 1,0 g/kg e baixo sódio)</option>
+                  <option value="drc_conservador">Estágios 3a e 3b Conservador (Moderada: proteína reduzida 0,6 a 0,8 g/kg e controle de fósforo)</option>
+                  <option value="drc_avancada">Estágios 4 e 5 Pré-Diálise (Avançada: proteína 0,6 g/kg e restrição rigorosa de potássio e fósforo)</option>
+                  <option value="drc_dialise">Estágio 5 em Diálise ou Hemodiálise (Reposição proteica 1,2 g/kg com restrição de potássio, fósforo e líquidos)</option>
+                </select>
+              </div>
             </div>
           </fieldset>
 
@@ -394,8 +410,8 @@
     </div>
   </footer>
 
-  <script src="./recipes.js?v=15"></script>
-  <script src="./engine.js?v=15"></script>
-  <script src="./app.js?v=15"></script>
+  <script src="./recipes.js?v=16"></script>
+  <script src="./engine.js?v=16"></script>
+  <script src="./app.js?v=16"></script>
 </body>
 </html>

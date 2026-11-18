@@ -480,8 +480,22 @@ h3 {
   gap: var(--space-xs);
 }
 
-.slider-field.is-dimmed {
+.slider-field.is-dimmed,
+.field.is-dimmed {
   opacity: 0.65;
+}
+
+.renal-stage-box {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.renal-stage-box.is-active {
+  background-color: var(--bg-accent-soft);
+  border-color: var(--accent-text);
 }
 
 .slider-label-row {

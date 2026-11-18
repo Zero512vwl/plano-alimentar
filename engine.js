@@ -94,6 +94,23 @@ window.DietEngine = (function () {
     return hh + mm / 60;
   }
 
+  function getRenalStage(profile) {
+    if (!profile) return "nenhuma";
+    const explicit = profile.nivel_renal;
+    if (
+      explicit === "drc_leve" ||
+      explicit === "drc_conservador" ||
+      explicit === "drc_avancada" ||
+      explicit === "drc_dialise"
+    ) {
+      return explicit;
+    }
+    if ((profile.doencas || []).includes("renal_alerta")) {
+      return "drc_conservador";
+    }
+    return "nenhuma";
+  }
+
   // Distribui os horários sem permitir sobreposição entre refeições, em qualquer turno (diurno ou noturno)
   function computeDailySchedule(profile, isWorkday) {
     const wake = Number(profile.hora_acorda ?? 6);
@@ -104,7 +121,11 @@ window.DietEngine = (function () {
     const awakeSpan = Math.max(10, sleep - wake);
     const wStart = Number(profile.trabalho_inicio ?? 7);
     const wEnd = Number(profile.trabalho_fim ?? 17);
-    const worksOutside = Boolean(isWorkday && profile.rotina_trabalho === "fora_dia_todo");
+    const worksOutside = Boolean(
+      isWorkday &&
+        (profile.rotina_trabalho === "fora_dia_todo" ||
+          profile.rotina_trabalho === "fora_meio_periodo")
+    );
 
     const rushedMorning = worksOutside && wStart >= wake && wStart <= wake + 1.0;
     const cafeHour = rushedMorning
@@ -275,14 +296,16 @@ window.DietEngine = (function () {
       kcalTarget = get + 280;
     }
 
-    // Na DRC conservadora (KDOQI / SBN / BRASPEN), garantir aporte energético adequado (25-35 kcal/kg de peso ajustado) para evitar catabolismo
     const heightM = altura / 100;
     const bmi = heightM > 0 ? peso / (heightM * heightM) : 22;
+    const renalStage = getRenalStage(profile);
+    const hasRenal = renalStage !== "nenhuma";
+
     let pesoRef = peso;
     if (bmi >= 30) {
       const idealWeight = 25 * (heightM * heightM);
       pesoRef = idealWeight + 0.25 * (peso - idealWeight);
-    } else if (bmi >= 25 && doencas.includes("renal_alerta")) {
+    } else if (bmi >= 25 && hasRenal) {
       const idealWeight = 23 * (heightM * heightM);
       pesoRef = idealWeight + 0.25 * (peso - idealWeight);
     }
@@ -297,14 +320,24 @@ window.DietEngine = (function () {
         ? 1.8
         : 1.5;
 
-    // Diretriz Oficial Doença Renal Crônica em tratamento conservador (KDOQI / SBN / BRASPEN):
-    // 0,6 a 0,8 g/kg/dia (usamos 0,75 g/kg/dia sobre peso de referência; 0,8 g/kg se também houver diabetes)
-    if (doencas.includes("renal_alerta")) {
-      proteinPerKg = doencas.includes("diabetes") ? 0.8 : 0.72;
+    // Diretrizes Oficiais Doença Renal Crônica por estágio (KDOQI 2020 / KDIGO 2024 / SBN / BRASPEN):
+    // - Estágios 1 e 2 (drc_leve): 0,8 a 1,0 g/kg/dia (evita hiperfiltração sem restrição severa)
+    // - Estágios 3a e 3b Conservador (drc_conservador): 0,6 a 0,8 g/kg/dia (0,72 g/kg; 0,8 g/kg se diabetes)
+    // - Estágios 4 e 5 Pré-Diálise (drc_avancada): 0,55 a 0,65 g/kg/dia (0,60 g/kg; 0,65 g/kg se diabetes)
+    // - Estágio 5 em Diálise / Hemodiálise (drc_dialise): 1,0 a 1,2 g/kg/dia (1,20 g/kg para repor perdas no dialisato)
+    if (renalStage === "drc_leve") {
+      proteinPerKg = 0.90;
+    } else if (renalStage === "drc_conservador") {
+      proteinPerKg = doencas.includes("diabetes") ? 0.80 : 0.72;
+    } else if (renalStage === "drc_avancada") {
+      proteinPerKg = doencas.includes("diabetes") ? 0.65 : 0.60;
+    } else if (renalStage === "drc_dialise") {
+      proteinPerKg = 1.20;
     }
 
     const proteinG = Math.round(pesoRef * proteinPerKg);
-    const fatShare = doencas.includes("colesterol") ? 0.22 : doencas.includes("renal_alerta") ? 0.30 : 0.25;
+    const isLowProtRenal = renalStage === "drc_conservador" || renalStage === "drc_avancada";
+    const fatShare = doencas.includes("colesterol") ? 0.22 : isLowProtRenal ? 0.30 : 0.25;
     const fatG = Math.round(Math.max(pesoRef * 0.70, (kcalTarget * fatShare) / 9));
     const remainingKcal = Math.max(200, kcalTarget - proteinG * 4 - fatG * 9);
     const carbG = Math.round(remainingKcal / 4);
@@ -321,7 +354,8 @@ window.DietEngine = (function () {
       carbs: carbG,
       fat: fatG,
       fiber: fiberG,
-      pesoRef: Math.round(pesoRef * 10) / 10
+      pesoRef: Math.round(pesoRef * 10) / 10,
+      renalStage
     };
   }
 
@@ -336,9 +370,18 @@ window.DietEngine = (function () {
     return false;
   }
 
-  function adaptAndFilterRecipe(recipe, restrictions, dislikes, doencas, habilidade) {
+  function adaptAndFilterRecipe(recipe, restrictions, dislikes, doencas, habilidade, renalStage = "nenhuma") {
     const tags = recipe.tags || [];
     const prepMins = parsePrepMinutes(recipe.prepTime);
+    const hasRenal = renalStage !== "nenhuma" || doencas.includes("renal_alerta");
+    const effectiveRenal = renalStage !== "nenhuma" ? renalStage : (hasRenal ? "drc_conservador" : "nenhuma");
+    const restrictPhosphorus =
+      effectiveRenal === "drc_conservador" ||
+      effectiveRenal === "drc_avancada" ||
+      effectiveRenal === "drc_dialise";
+    const restrictPotassium =
+      effectiveRenal === "drc_avancada" ||
+      effectiveRenal === "drc_dialise";
 
     if (habilidade === "basica" && prepMins >= 30) {
       return null;
@@ -363,10 +406,19 @@ window.DietEngine = (function () {
       return null;
     }
 
-    // Diretriz SBN / KDOQI Doença Renal Crônica:
-    // Exclui suplementos de Whey Protein e receitas centradas em leguminosas puras de alto potássio/fósforo sem carne de alto valor biológico
-    if (doencas.includes("renal_alerta")) {
-      if (tags.includes("whey") || recipe.id === "alm-grao-bico-arroz" || recipe.id === "ceia-abacate-cacau") {
+    // Diretriz SBN / KDOQI Doença Renal Crônica por estágio:
+    if (effectiveRenal !== "nenhuma") {
+      // Nos estágios pré-diálise (1 a 5 conservador), exclui suplementos de Whey Protein
+      if (effectiveRenal !== "drc_dialise" && tags.includes("whey")) {
+        return null;
+      }
+      // A partir do estágio 3 (fósforo/potássio controlados), exclui pratos baseados em leguminosas puras, chia ou abacate com cacau
+      if (
+        restrictPhosphorus &&
+        (recipe.id === "alm-grao-bico-arroz" ||
+          recipe.id === "ceia-abacate-cacau" ||
+          recipe.id === "ceia-pudim-chia-whey")
+      ) {
         return null;
       }
     }
@@ -387,21 +439,27 @@ window.DietEngine = (function () {
     for (const rawIng of recipe.ingredients) {
       let ing = { ...rawIng };
 
-      // 1. Diretriz SBD Diabetes / Pré-diabetes e SBC Dislipidemia (controle de IG e triglicérides)
-      if (doencas.includes("diabetes") || doencas.includes("colesterol") || doencas.includes("hipertensao")) {
+      // 1. Diretriz SBD Diabetes / Pré-diabetes, SBC Dislipidemia e SBN Doença Renal (pão sem sal oculto)
+      if (
+        doencas.includes("diabetes") ||
+        doencas.includes("colesterol") ||
+        doencas.includes("hipertensao") ||
+        effectiveRenal !== "nenhuma"
+      ) {
         if (ing.name === "Pão francês") {
           ing = {
             ...ing,
-            name: doencas.includes("hipertensao")
-              ? "Pão integral com baixo teor de sódio (baixo IG)"
-              : "Pão de forma integral (baixo IG)",
+            name:
+              doencas.includes("hipertensao") || effectiveRenal !== "nenhuma"
+                ? "Pão de forma com baixo teor de sódio"
+                : "Pão de forma integral (baixo IG)",
             kcal100: 253,
             p100: 9.4,
             c100: 49.9,
             g100: 3.7,
             fib100: 6.9
           };
-          adaptedName = adaptedName.replace(/Pão francês/gi, "Pão integral");
+          adaptedName = adaptedName.replace(/Pão francês/gi, "Pão baixo sódio");
         }
       }
 
@@ -435,8 +493,8 @@ window.DietEngine = (function () {
         }
       }
 
-      // 2. Diretriz SBC Hipertensão (DASH) e SBN Doença Renal (controle estrito de sódio < 2000 mg/dia)
-      if (doencas.includes("hipertensao") || doencas.includes("renal_alerta")) {
+      // 2. Diretriz SBC Hipertensão (DASH) e SBN Doença Renal em todos os estágios (controle estrito de sódio < 2000 mg/dia)
+      if (doencas.includes("hipertensao") || effectiveRenal !== "nenhuma") {
         if (ing.name === "Queijo minas frescal") {
           ing = {
             ...ing,
@@ -514,32 +572,132 @@ window.DietEngine = (function () {
         }
       }
 
-      // 5. Diretriz SBN Doença Renal Crônica: reduz fósforo/potássio de oleaginosas e sementes concentradas e ajusta feijão/azeite
-      if (doencas.includes("renal_alerta")) {
-        if (/Pasta de amendoim|Amendoim torrado|Semente de chia/i.test(ing.name)) {
+      // 5. Diretriz SBN / KDOQI Doença Renal Crônica por estágio:
+      // 5a. Estágios 3a/3b, 4/5 Pré-Diálise e Diálise: controle de Fósforo (retira sementes, amendoim e castanhas ricos em fósforo)
+      if (restrictPhosphorus) {
+        if (/Pasta de amendoim|Amendoim torrado|Semente de chia|castanha-do-pará/i.test(ing.name)) {
+          const alreadyHasJam = adaptedIngredients.some((a) => /Geleia de fruta/i.test(a.name));
+          if (effectiveRenal === "drc_dialise") {
+            ing = {
+              ...ing,
+              name: alreadyHasJam
+                ? "Maçã ou pera picada com canela (baixo fósforo e potássio)"
+                : "Clara de ovo cozida ou ricota sem sal (alta proteína e mínimo fósforo)",
+              grams: alreadyHasJam ? 90 : 60,
+              kcal100: 52,
+              p100: alreadyHasJam ? 0.3 : 11.0,
+              c100: alreadyHasJam ? 14.0 : 0.7,
+              g100: 0.2,
+              fib100: alreadyHasJam ? 2.0 : 0,
+              scalable: true
+            };
+          } else if (alreadyHasJam) {
+            ing = {
+              ...ing,
+              name: "Maçã ou pera picada com canela (baixo fósforo e baixo potássio)",
+              grams: 100,
+              kcal100: 52,
+              p100: 0.3,
+              c100: 14.0,
+              g100: 0.2,
+              fib100: 2.0,
+              scalable: true
+            };
+          } else {
+            ing = {
+              ...ing,
+              name: "Geleia de fruta sem açúcar ou mel (baixo fósforo/potássio e zero proteína)",
+              grams: 20,
+              kcal100: 280,
+              p100: 0.2,
+              c100: 70.0,
+              g100: 0,
+              fib100: 0.5,
+              scalable: true
+            };
+          }
+          adaptedName = adaptedName
+            .replace(/com chia e castanhas/gi, "com fruta e geleia sem açúcar (baixo fósforo)")
+            .replace(/com pasta de amendoim/gi, "com geleia sem açúcar")
+            .replace(/com mix de castanha-do-pará e amendoim/gi, "com acompanhamento leve (baixo fósforo)");
+        } else if (/Feijão|Lentilha/i.test(ing.name)) {
           ing = {
             ...ing,
-            name: "Geleia de fruta sem açúcar ou mel (baixo fósforo/potássio e zero proteína)",
-            grams: 20,
-            kcal100: 280,
-            p100: 0.2,
-            c100: 70.0,
-            g100: 0,
-            fib100: 0.5,
-            scalable: true
-          };
-        } else if (/Feijão/i.test(ing.name)) {
-          ing = {
-            ...ing,
-            name: ing.name + " (apenas grãos cozidos em 2 águas para reduzir potássio)",
-            grams: 45,
+            name:
+              ing.name +
+              (restrictPotassium
+                ? " (demolhado 12h e cozido em 2 águas descartando o caldo para retirar potássio e fósforo)"
+                : " (apenas grãos cozidos em 2 águas para reduzir potássio e fósforo)"),
+            grams: restrictPotassium ? 35 : 45,
             scalable: false
           };
-        } else if (/Azeite de oliva/i.test(ing.name)) {
+        } else if (/Azeite de oliva/i.test(ing.name) && effectiveRenal !== "drc_dialise") {
           ing = {
             ...ing,
             grams: 10,
             scalable: true
+          };
+        }
+      }
+
+      // 5b. Estágios 4/5 Pré-Diálise e Estágio 5 em Diálise: restrição rigorosa de Potássio (K+)
+      // Substitui frutas de alto potássio (banana, mamão, abacate) por frutas de baixo potássio (maçã, pera, abacaxi)
+      // e aplica técnica de cozimento em água abundante com descarte da água (lixiviação) em tubérculos e legumes
+      if (restrictPotassium) {
+        if (/Banana/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Maçã sem casca ou pera (fruta de baixo potássio)",
+            kcal100: 52,
+            p100: 0.3,
+            c100: 14.0,
+            g100: 0.2,
+            fib100: 2.0,
+            unitHint: "1 unidade média"
+          };
+          adaptedName = adaptedName.replace(/banana/gi, "maçã/pera (baixo potássio)");
+        } else if (/Mamão/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Abacaxi ou maçã picada (fruta de baixo potássio)",
+            kcal100: 50,
+            p100: 0.4,
+            c100: 13.0,
+            g100: 0.1,
+            fib100: 1.4,
+            unitHint: "1 fatia média / 1 unidade"
+          };
+          adaptedName = adaptedName.replace(/mamão/gi, "abacaxi/maçã");
+        } else if (/Abacate/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Pera ou maçã cozida com canela (fruta de baixo potássio)",
+            kcal100: 54,
+            p100: 0.4,
+            c100: 14.5,
+            g100: 0.1,
+            fib100: 2.2
+          };
+          adaptedName = adaptedName.replace(/abacate/gi, "pera/maçã");
+        } else if (/Batata|Abóbora|Mandioca/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: ing.name + " (descascada, picada e cozida em água abundante descartando a água para reduzir 50% do potássio)"
+          };
+        } else if (/Tomate e alface/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Alface, pepino e cenoura ralada (salada de baixo potássio, sem tomate)",
+            kcal100: 20,
+            p100: 0.9,
+            c100: 4.0,
+            g100: 0.2,
+            fib100: 1.6
+          };
+        } else if (/Brócolis|Abobrinha/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Chuchu, abobrinha e cenoura cozidos em água abundante (descartando a água para reduzir potássio)"
           };
         }
       }
@@ -596,13 +754,37 @@ window.DietEngine = (function () {
     if (doencas.includes("hipertensao") && !/DASH/i.test(adaptedNotes)) {
       adaptedNotes += " Diretriz Hipertensão (DASH): prepare com ervas naturais, alho e limão, reduzindo o sal de adição.";
     }
-    if (doencas.includes("renal_alerta") && !/SBN/i.test(adaptedNotes)) {
-      adaptedNotes += " Diretriz Renal (SBN/KDOQI): porção proteica reduzida para proteger a filtração glomerular e sem sal oculto.";
+    if (effectiveRenal !== "nenhuma" && !/SBN/i.test(adaptedNotes)) {
+      if (effectiveRenal === "drc_dialise") {
+        adaptedNotes += " Diretriz Renal em Diálise (SBN/KDOQI): aporte proteico de alto valor biológico com restrição de potássio, fósforo e sódio.";
+      } else if (effectiveRenal === "drc_avancada") {
+        adaptedNotes += " Diretriz Renal Estágio 4/5 Pré-Diálise (SBN/KDOQI): porção proteica estritamente reduzida (0,6 g/kg) e controle rigoroso de potássio, fósforo e sódio.";
+      } else if (effectiveRenal === "drc_leve") {
+        adaptedNotes += " Diretriz Renal Estágios 1–2 (SBN/KDOQI): proteína controlada sem excessos (0,8–1,0 g/kg) e baixo sódio.";
+      } else {
+        adaptedNotes += " Diretriz Renal Conservadora Estágios 3a/3b (SBN/KDOQI): porção proteica reduzida (0,6–0,8 g/kg) para proteger a filtração glomerular e baixo fósforo/sódio.";
+      }
+    }
+
+    if (adaptedName.length > 0) {
+      adaptedName = adaptedName.charAt(0).toUpperCase() + adaptedName.slice(1);
+    }
+
+    let adaptedSteps = recipe.steps || [];
+    if (restrictPotassium) {
+      const replaceLowKText = (txt) =>
+        String(txt)
+          .replace(/banana/gi, "maçã ou pera (baixo potássio)")
+          .replace(/mamão/gi, "abacaxi ou maçã")
+          .replace(/abacate/gi, "pera ou maçã");
+      adaptedSteps = adaptedSteps.map(replaceLowKText);
+      adaptedNotes = replaceLowKText(adaptedNotes);
     }
 
     return {
       ...recipe,
       name: adaptedName,
+      steps: adaptedSteps,
       notes: adaptedNotes,
       prepMinutes: prepMins,
       portableRoomTemp: ROOM_TEMP_PORTABLE_IDS.has(recipe.id),
@@ -615,6 +797,7 @@ window.DietEngine = (function () {
   function buildAppliedGuidelines(profile, targets) {
     const list = [];
     const doencas = profile.doencas || [];
+    const renalStage = getRenalStage(profile);
     const wakeStr = formatHour(profile.hora_acorda ?? 6);
     const sleepStr = formatHour(profile.hora_dorme ?? 22.5);
     const wStartStr = formatHour(profile.trabalho_inicio ?? 7);
@@ -622,11 +805,19 @@ window.DietEngine = (function () {
 
     if (profile.rotina_trabalho === "fora_dia_todo") {
       list.push(
-        `Horários ajustados ao seu turno (${wStartStr} às ${wEndStr}, acordando às ${wakeStr} e dormindo às ${sleepStr}): as refeições de segunda a sexta que caem dentro do expediente foram marcadas como "No trabalho" e adaptadas ao seu armazenamento.`
+        `Horários ajustados ao seu turno fora o dia todo (${wStartStr} às ${wEndStr}, acordando às ${wakeStr} e dormindo às ${sleepStr}): as refeições de segunda a sexta que caem dentro do expediente foram marcadas como "No trabalho" e adaptadas ao seu armazenamento.`
+      );
+    } else if (profile.rotina_trabalho === "fora_meio_periodo") {
+      list.push(
+        `Horários ajustados ao trabalho fora em meio período (${wStartStr} às ${wEndStr}, acordando às ${wakeStr} e dormindo às ${sleepStr}): apenas as refeições de segunda a sexta dentro desse turno foram marcadas como "No trabalho".`
+      );
+    } else if (profile.rotina_trabalho === "nao_trabalha") {
+      list.push(
+        `Rotina sem trabalho externo (acordando às ${wakeStr} e dormindo às ${sleepStr}): todas as refeições da semana foram planejadas como "Em casa", permitindo preparos frescos na hora sem necessidade de transporte em marmita.`
       );
     } else {
       list.push(
-        `Horários do dia ajustados (acordando às ${wakeStr} e dormindo às ${sleepStr}): horários sugeridos distribuídos ao longo do dia sem sobreposição.`
+        `Rotina em casa / não trabalha fora (acordando às ${wakeStr} e dormindo às ${sleepStr}): todas as refeições são feitas "Em casa", com horários distribuídos ao longo do dia sem sobreposição.`
       );
     }
 
@@ -648,7 +839,10 @@ window.DietEngine = (function () {
       );
     }
 
-    if (profile.rotina_trabalho === "fora_dia_todo") {
+    if (
+      profile.rotina_trabalho === "fora_dia_todo" ||
+      profile.rotina_trabalho === "fora_meio_periodo"
+    ) {
       if (profile.armazenamento_trabalho === "mochila_sem_geladeira") {
         list.push(
           "Trabalho fora (Sem geladeira): de segunda a sexta, os lanches priorizam alimentos estáveis em temperatura ambiente (frutas inteiras, castanhas, aveia e Whey em pó na coqueteleira para pôr água na hora), evitando laticínios perecíveis na mochila."
@@ -694,9 +888,21 @@ window.DietEngine = (function () {
         "Diretriz Hipotireoidismo (SBEM): bebidas de soja foram substituídas para não reduzir a absorção da levotiroxina. Tome o hormônio da tireoide em jejum com água pura e aguarde 30 a 60 minutos antes do café da manhã (evite suplementos de ferro ou cálcio no mesmo horário)."
       );
     }
-    if (doencas.includes("renal_alerta")) {
+    if (renalStage === "drc_leve") {
       list.push(
-        `Diretriz Doença Renal Crônica em Tratamento Conservador (SBN / BRASPEN / KDOQI): a ingestão proteica foi estritamente controlada em 0,6 a 0,8 g/kg/dia (meta de ${targets.protein} g/dia) e as gramas de carnes/ovos de cada prato foram reduzidas automaticamente, mantendo o aporte calórico (25-35 kcal/kg) via carboidratos complexos e azeite para evitar catabolismo. Suplementos de Whey, queijos com sal e sementes ricas em fósforo foram retirados. Atenção: NUNCA consuma carambola (neurotóxica na DRC) e valide potássio/fósforo séricos com seu nefrologista.`
+        `Diretriz Doença Renal Crônica Estágios 1 e 2 — Leve (SBN / KDIGO / KDOQI): proteína controlada sem excessos em 0,8 a 1,0 g/kg/dia (meta de ${targets.protein} g/dia, sem suplementos de Whey Protein) para evitar hiperfiltração glomerular, associada à redução de sódio (< 2.000 mg/dia; pães e queijos trocados por versões sem sal). Atenção: NUNCA consuma carambola (neurotóxica na DRC).`
+      );
+    } else if (renalStage === "drc_conservador") {
+      list.push(
+        `Diretriz Doença Renal Crônica Estágios 3a e 3b — Tratamento Conservador (SBN / BRASPEN / KDOQI): ingestão proteica estritamente reduzida para 0,6 a 0,8 g/kg/dia (meta de ${targets.protein} g/dia), reduzindo automaticamente as gramas de carnes/ovos e mantendo a energia (25-35 kcal/kg) via carboidratos complexos e azeite. Retirados Whey, queijos com sal e sementes/oleaginosas ricas em fósforo; feijão ajustado para cozimento em 2 águas. NUNCA consuma carambola.`
+      );
+    } else if (renalStage === "drc_avancada") {
+      list.push(
+        `Diretriz Doença Renal Crônica Estágios 4 e 5 Pré-Diálise — Avançada (SBN / BRASPEN / KDOQI): dieta hipoproteica estrita de 0,6 g/kg/dia (meta de ${targets.protein} g/dia) com restrição rigorosa de Potássio, Fósforo e Sódio. Frutas ricas em potássio (banana, mamão, abacate) foram automaticamente substituídas por frutas de baixo potássio (maçã, pera, abacaxi), tubérculos/legumes orientados ao cozimento em água abundante com descarte da água (reduz 50% do potássio) e sementes/castanhas/queijos salgados retirados. NUNCA consuma carambola.`
+      );
+    } else if (renalStage === "drc_dialise") {
+      list.push(
+        `Diretriz Doença Renal Crônica Estágio 5 em Diálise / Hemodiálise (SBN / BRASPEN / KDOQI): dieta hiperproteica de reposição de 1,2 g/kg/dia (meta de ${targets.protein} g/dia, priorizando clara de ovo, frango e carnes magras para repor os aminoácidos perdidos na sessão de diálise), combinada com restrição rigorosa de Potássio (banana, mamão e abacate substituídos por maçã, pera e abacaxi + cozimento de tubérculos com descarte da água), Fósforo (sem sementes, amendoim, castanhas ou queijos amarelos), Sódio e controle de líquidos conforme sua diurese residual. NUNCA consuma carambola.`
       );
     }
 
@@ -733,7 +939,8 @@ window.DietEngine = (function () {
   // bata exatamente a meta proteica da refeição (fundamental na DRC 0,6-0,8 g/kg/dia), enquanto os carboidratos/gorduras fecham as calorias!
   function scaleRecipeForSlot(recipe, targetSlotKcal, targetSlotProtein, isRenal) {
     const isProteinDominant = (ing) =>
-      ing.p100 >= 11 && ing.p100 * 4 >= ing.c100 * 1.4;
+      (ing.p100 >= 11 && ing.p100 * 4 >= ing.c100 * 1.4) ||
+      /Iogurte|Ricota|Queijo/i.test(ing.name);
 
     let baseProtFromProtIngs = 0;
     let baseKcalFromProtIngs = 0;
@@ -759,25 +966,25 @@ window.DietEngine = (function () {
     let protFactor = isRenal ? 0.45 : 1.0;
     let energyFactor = 1.0;
 
-    // 2 iterações para convergir simultaneamente Proteína Total e Calorias Totais do prato
+    // 3 iterações para convergir simultaneamente Proteína Total e Calorias Totais do prato
     for (let iter = 0; iter < 3; iter++) {
       const currentOtherProt = baseProtFromFixed + baseProtFromEnergyIngs * energyFactor;
       if (baseProtFromProtIngs > 0 && targetSlotProtein > 0) {
         const desiredFromProt = Math.max(
-          isRenal ? 1.0 : 8,
+          isRenal ? 0.8 : 4,
           targetSlotProtein - currentOtherProt
         );
         const rawProt = desiredFromProt / baseProtFromProtIngs;
         protFactor = isRenal
-          ? Math.min(0.80, Math.max(0.12, rawProt))
-          : Math.min(1.45, Math.max(0.50, rawProt));
+          ? Math.min(0.85, Math.max(0.10, rawProt))
+          : Math.min(1.45, Math.max(0.30, rawProt));
       }
 
       const currentProtAndFixedKcal = baseKcalFromFixed + baseKcalFromProtIngs * protFactor;
       if (baseKcalFromEnergyIngs > 0) {
         const neededEnergyKcal = Math.max(80, targetSlotKcal - currentProtAndFixedKcal);
         const rawEnergy = neededEnergyKcal / baseKcalFromEnergyIngs;
-        energyFactor = Math.min(isRenal ? 2.4 : 2.1, Math.max(0.55, rawEnergy));
+        energyFactor = Math.min(isRenal ? 2.2 : 2.1, Math.max(0.55, rawEnergy));
       }
     }
 
@@ -786,7 +993,9 @@ window.DietEngine = (function () {
       if (isProteinDominant(ing)) {
         newGrams = roundTo5(ing.grams * protFactor);
       } else if (ing.scalable) {
-        newGrams = roundTo5(ing.grams * energyFactor);
+        const effEnergyFactor =
+          isRenal && ing.p100 >= 8.5 ? Math.min(1.25, energyFactor) : energyFactor;
+        newGrams = roundTo5(ing.grams * effEnergyFactor);
       }
       const factor = newGrams / 100;
       return {
@@ -948,7 +1157,11 @@ window.DietEngine = (function () {
     const targets = calculateTargets(profile);
     const restrictions = profile.restricoes || [];
     const doencas = profile.doencas || [];
-    const isRenal = doencas.includes("renal_alerta");
+    const renalStage = getRenalStage(profile);
+    const isLowProtRenal =
+      renalStage === "drc_leve" ||
+      renalStage === "drc_conservador" ||
+      renalStage === "drc_avancada";
     const habilidade = profile.habilidade || "intermediaria";
     const rotinaTrabalho = profile.rotina_trabalho || "casa";
     const armazenamentoTrabalho = profile.armazenamento_trabalho || "geladeira_micro";
@@ -969,14 +1182,14 @@ window.DietEngine = (function () {
     const filterByCat = (cat) => {
       const adapted = bank
         .filter((r) => r.category === cat)
-        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes, doencas, habilidade))
+        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes, doencas, habilidade, renalStage))
         .filter(Boolean);
 
       if (adapted.length >= 2) return adapted;
 
       const clinicalSafe = bank
         .filter((r) => r.category === cat)
-        .map((r) => adaptAndFilterRecipe(r, restrictions, [], doencas, "avancada"))
+        .map((r) => adaptAndFilterRecipe(r, restrictions, [], doencas, "avancada", renalStage))
         .filter(Boolean);
 
       return clinicalSafe.length > 0 ? clinicalSafe : bank.filter((r) => r.category === cat);
@@ -1006,7 +1219,7 @@ window.DietEngine = (function () {
     };
 
     function scaleForTarget(recipe, targetSlotKcal, targetSlotProtein) {
-      return scaleRecipeForSlot(recipe, targetSlotKcal, targetSlotProtein, isRenal);
+      return scaleRecipeForSlot(recipe, targetSlotKcal, targetSlotProtein, isLowProtRenal);
     }
 
     function getWorkdayPoolForSlot(basePool, scheduledSlot) {
@@ -1241,7 +1454,11 @@ window.DietEngine = (function () {
     const pool = plan.poolsByCategory[meal.category] || [];
     if (pool.length <= 1) return plan;
 
-    const isRenal = ((plan.profile && plan.profile.doencas) || []).includes("renal_alerta");
+    const renalStage = getRenalStage(plan.profile);
+    const isLowProtRenal =
+      renalStage === "drc_leve" ||
+      renalStage === "drc_conservador" ||
+      renalStage === "drc_avancada";
     const nextPoolIndex = (meal.poolIndex || 0) + 1;
     const slotTargetKcal = meal.isOptional
       ? Math.min(220, Math.max(160, plan.targets.kcal * (meal.share || 0.12)))
@@ -1256,7 +1473,7 @@ window.DietEngine = (function () {
 
     const addScaled = (candidate) => {
       if (candidate && !options.some((o) => o.id === candidate.id)) {
-        options.push(scaleRecipeForSlot(candidate, slotTargetKcal, slotTargetProtein, isRenal));
+        options.push(scaleRecipeForSlot(candidate, slotTargetKcal, slotTargetProtein, isLowProtRenal));
       }
     };
 
