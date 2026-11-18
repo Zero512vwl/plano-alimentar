@@ -1,38 +1,38 @@
 /* Hallmark v2.0.0 — Editorial Utility · Plano Alimentar Pessoal */
 
 :root {
-  --bg-page: #faf8f5;
-  --bg-surface: #fdfcfa;
-  --bg-subtle: #f1ede6;
-  --bg-track: #dfd9ce;
-  --bg-accent-soft: #e6efe9;
-  --bg-warn-soft: #fdf3e7;
-  --bg-danger-soft: #fbeae8;
+  --bg-page: #f3f3ef;
+  --bg-surface: #fcfcfa;
+  --bg-subtle: #e5e4de;
+  --bg-track: #d4d3cb;
+  --bg-accent-soft: #dcfce7;
+  --bg-warn-soft: #fef3c7;
+  --bg-danger-soft: #fee2e2;
 
-  --text-primary: #1c2220;
-  --text-secondary: #4c5753;
-  --text-muted: #66736e;
-  --text-on-accent: #f7faf8;
+  --text-primary: #18181b;
+  --text-secondary: #3f3f46;
+  --text-muted: #52525b;
+  --text-on-accent: #f7fee7;
 
-  --accent-primary: #2f5d50;
-  --accent-primary-hover: #244a3f;
-  --accent-warm: #a85c2b;
-  --border-subtle: #dcd6cc;
-  --border-strong: #b8b0a2;
-  --danger-text: #8c2b21;
+  --accent-primary: #14532d;
+  --accent-primary-hover: #0f3f22;
+  --accent-warm: #9a3412;
+  --border-subtle: #d4d3cb;
+  --border-strong: #a1a09a;
+  --danger-text: #991b1b;
 
-  --shadow-card: 0 2px 6px -1px rgba(28, 34, 32, 0.06), 0 1px 2px -1px rgba(28, 34, 32, 0.04);
-  --shadow-card-hover: 0 10px 20px -6px rgba(28, 34, 32, 0.10), 0 2px 6px -1px rgba(28, 34, 32, 0.05);
-  --shadow-halo: 0 0 0 1px rgba(47, 93, 80, 0.25), 0 4px 12px -2px rgba(47, 93, 80, 0.28);
-  --shadow-focus: 0 0 0 3px rgba(47, 93, 80, 0.18);
-  --shadow-pill: 0 1px 3px rgba(28, 34, 32, 0.10);
-  --shadow-inset: inset 0 1px 2px rgba(28, 34, 32, 0.06);
+  --shadow-card: 0 0 0 1px rgba(24, 24, 27, 0.05), 0 8px 20px -6px rgba(24, 24, 27, 0.09);
+  --shadow-card-hover: 0 0 0 1px rgba(20, 83, 45, 0.25), 0 14px 28px -8px rgba(24, 24, 27, 0.14);
+  --shadow-halo: 0 0 0 2px rgba(252, 252, 250, 0.9), 0 0 0 4px rgba(20, 83, 45, 0.28), 0 6px 14px -2px rgba(20, 83, 45, 0.35);
+  --shadow-focus: 0 0 0 4px rgba(20, 83, 45, 0.22);
+  --shadow-pill: 0 2px 5px rgba(24, 24, 27, 0.12);
+  --shadow-inset: inset 0 2px 4px rgba(24, 24, 27, 0.07);
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: Georgia, "Times New Roman", Times, serif;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
   --space-2xs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
@@ -198,6 +198,7 @@ h2,
 h3 {
   font-family: var(--font-serif);
   color: var(--text-primary);
+  letter-spacing: -0.025em;
   margin: 0 0 var(--space-xs);
   overflow-wrap: break-word;
   text-wrap: balance;
