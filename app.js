@@ -38,6 +38,7 @@
         { label: "Pão francês", value: "pao frances" },
         { label: "Pão integral", value: "pao de forma integral" },
         { label: "Tapioca", value: "tapioca" },
+        { label: "Cuscuz / Flocão de milho", value: "cuscuz" },
         { label: "Aveia", value: "aveia" }
       ]
     },
@@ -236,15 +237,19 @@
       "Base nutricional TACO/TBCA e USDA. Medidas caseiras convertidas (como fio de azeite, colher de chia e unidades de ovos/frutas) aparecem sinalizadas como estimativa.";
   }
 
-  function renderDayDetail(day) {
+  function renderDayDetail(day, dayIdx, isPrint) {
     const mealsHtml = day.meals
-      .map((m) => {
+      .map((m, mealIdx) => {
         const r = m.recipe;
+        const options = m.options || [r];
+        const activeOptIdx = m.activeOptionIndex || 0;
+
         const ingList = r.ingredients
           .map((ing) => {
             const estBadge = ing.estimated ? '<span class="badge-estimate">estimativa</span>' : "";
             const hint = ing.unitHint ? ` (${escapeHtml(ing.unitHint)})` : "";
-            return `<li><strong>${ing.grams} g</strong> de ${escapeHtml(ing.name)}${hint}${estBadge}</li>`;
+            const kcalText = typeof ing.kcal === "number" ? ` <span class="ing-kcal">(${ing.kcal} kcal)</span>` : "";
+            return `<li><strong>${ing.grams} g</strong> de ${escapeHtml(ing.name)}${hint}${kcalText}${estBadge}</li>`;
           })
           .join("");
 
@@ -252,13 +257,58 @@
           ? '<span class="badge-freeze">Congelável em lote</span>'
           : "";
 
+        const swapBtn = !isPrint
+          ? `<button type="button" class="btn btn-secondary btn-small btn-swap no-print" data-day-idx="${dayIdx}" data-meal-idx="${mealIdx}">Girar opções</button>`
+          : "";
+
+        const optionTabsHtml =
+          !isPrint && options.length > 1
+            ? `<div class="meal-option-pills no-print" role="group" aria-label="Opções da refeição">
+                ${options
+                  .map(
+                    (opt, optIdx) => `
+                  <button type="button" class="opt-pill ${optIdx === activeOptIdx ? "is-active" : ""}" data-day-idx="${dayIdx}" data-meal-idx="${mealIdx}" data-opt-idx="${optIdx}">
+                    Opção ${optIdx + 1} (${opt.macros.kcal} kcal)
+                  </button>
+                `
+                  )
+                  .join("")}
+              </div>`
+            : "";
+
+        const otherOptions = options
+          .map((opt, idx) => ({ opt, idx }))
+          .filter((entry) => entry.idx !== activeOptIdx);
+
+        const alternativesHtml =
+          otherOptions.length > 0
+            ? `<div class="meal-alternatives">
+                <strong class="alt-heading">Outras opções equivalentes para substituir:</strong>
+                <ul class="alt-list">
+                  ${otherOptions
+                    .map(({ opt, idx }) => {
+                      const shortIngs = opt.ingredients
+                        .map((i) => `${i.grams}g ${escapeHtml(i.name)}`)
+                        .join(", ");
+                      return `<li><strong>Opção ${idx + 1}: ${escapeHtml(opt.name)}</strong> (${opt.macros.kcal} kcal | P ${opt.macros.protein}g | C ${opt.macros.carbs}g | G ${opt.macros.fat}g) <span class="alt-ings">${shortIngs}</span></li>`;
+                    })
+                    .join("")}
+                </ul>
+              </div>`
+            : "";
+
         return `
           <article class="meal-card">
-            <span class="meal-slot-label">${escapeHtml(m.slotLabel)}</span>
+            <div class="meal-card-top">
+              <span class="meal-slot-label">${escapeHtml(m.slotLabel)}</span>
+              ${swapBtn}
+            </div>
+            ${optionTabsHtml}
             <h3>${escapeHtml(r.name)}</h3>
             ${freezeTag}
-            <p class="meal-macros">${r.macros.kcal} kcal | P ${r.macros.protein}g | C ${r.macros.carbs}g | G ${r.macros.fat}g | Fibras ${r.macros.fiber}g</p>
+            <p class="meal-macros"><strong>${r.macros.kcal} kcal</strong> | P ${r.macros.protein}g | C ${r.macros.carbs}g | G ${r.macros.fat}g | Fibras ${r.macros.fiber}g</p>
             <ul class="meal-ingredients">${ingList}</ul>
+            ${alternativesHtml}
           </article>
         `;
       })
@@ -292,13 +342,43 @@
       });
     });
 
-    document.getElementById("day-detail-container").innerHTML = renderDayDetail(
-      plan.days[activeDayIndex]
+    const detailContainer = document.getElementById("day-detail-container");
+    detailContainer.innerHTML = renderDayDetail(
+      plan.days[activeDayIndex],
+      activeDayIndex,
+      false
     );
+
+    detailContainer.querySelectorAll(".opt-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const dIdx = Number(btn.dataset.dayIdx);
+        const mIdx = Number(btn.dataset.mealIdx);
+        const oIdx = Number(btn.dataset.optIdx);
+        window.DietEngine.selectMealOption(plan, dIdx, mIdx, oIdx);
+        renderMetrics(plan);
+        renderDays(plan);
+        renderRecipes(plan);
+        renderFreezer(plan);
+        renderShopping(plan);
+      });
+    });
+
+    detailContainer.querySelectorAll(".btn-swap").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const dIdx = Number(btn.dataset.dayIdx);
+        const mIdx = Number(btn.dataset.mealIdx);
+        window.DietEngine.swapMealInPlan(plan, dIdx, mIdx);
+        renderMetrics(plan);
+        renderDays(plan);
+        renderRecipes(plan);
+        renderFreezer(plan);
+        renderShopping(plan);
+      });
+    });
 
     // Preenche a visão completa para impressão / PDF
     document.getElementById("print-all-days").innerHTML = plan.days
-      .map((d) => `<div class="print-day-block">${renderDayDetail(d)}</div>`)
+      .map((d, idx) => `<div class="print-day-block">${renderDayDetail(d, idx, true)}</div>`)
       .join("");
   }
 
@@ -309,7 +389,8 @@
         const ingList = recipe.ingredients
           .map((ing) => {
             const estBadge = ing.estimated ? '<span class="badge-estimate">estimativa</span>' : "";
-            return `<li><strong>${ing.grams} g</strong> de ${escapeHtml(ing.name)}${estBadge}</li>`;
+            const kcalText = typeof ing.kcal === "number" ? ` <span class="ing-kcal">(${ing.kcal} kcal)</span>` : "";
+            return `<li><strong>${ing.grams} g</strong> de ${escapeHtml(ing.name)}${kcalText}${estBadge}</li>`;
           })
           .join("");
 
@@ -321,7 +402,7 @@
           <article class="recipe-card">
             <div>
               <h3>${escapeHtml(recipe.name)}</h3>
-              <p class="meal-macros">Porção padrão: ${recipe.macros.kcal} kcal | P ${recipe.macros.protein}g | C ${recipe.macros.carbs}g | G ${recipe.macros.fat}g | Aparece ${count}x na semana</p>
+              <p class="meal-macros">Porção calculada: <strong>${recipe.macros.kcal} kcal</strong> | P ${recipe.macros.protein}g | C ${recipe.macros.carbs}g | G ${recipe.macros.fat}g | Aparece ${count}x na semana</p>
             </div>
             <div>
               <strong>Ingredientes por porção:</strong>

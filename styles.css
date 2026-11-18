@@ -746,10 +746,86 @@ h3 {
   transform: translateY(-2px);
 }
 
+.meal-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .meal-slot-label {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--accent-warm-text);
+}
+
+.ing-kcal {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.meal-option-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin: var(--space-2xs) 0;
+}
+
+.opt-pill {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.opt-pill:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.opt-pill:active {
+  transform: translateY(1px);
+}
+
+.opt-pill.is-active {
+  background-color: var(--bg-accent-soft);
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+}
+
+.meal-alternatives {
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.85rem;
+}
+
+.alt-heading {
+  display: block;
+  color: var(--accent-text);
+  margin-bottom: var(--space-2xs);
+}
+
+.alt-list {
+  margin: 0;
+  padding-left: var(--space-md);
+  color: var(--text-secondary);
+}
+
+.alt-list li {
+  margin-bottom: var(--space-2xs);
+}
+
+.alt-ings {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .meal-macros {
@@ -959,6 +1035,7 @@ h3 {
   .check-pill,
   .tab-btn,
   .day-pill,
+  .opt-pill,
   .meal-card,
   .progress-fill {
     transition: none;

@@ -1,4 +1,4 @@
-// Motor nutricional offline: cálculo de metas, filtro de restrições, ajuste de porções e lista de compras
+// Motor nutricional offline: cálculo de metas, substituição inteligente de acompanhamentos, rotação sem repetição e lista de compras
 window.DietEngine = (function () {
   const DAYS_OF_WEEK = [
     "Segunda-feira",
@@ -20,9 +20,24 @@ window.DietEngine = (function () {
   const GOAL_LABELS = {
     emagrecimento: "Emagrecimento",
     recomposicao: "Recomposição corporal",
-    manutencao: "Manutenção e organização",
+    manutencao: "Manutenção e saúde",
     hipertrofia: "Ganho de massa muscular"
   };
+
+  const FALLBACK_FRUITS = [
+    { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Maçã fuji", sector: "Hortifrúti", grams: 130, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Mamão formosa", sector: "Hortifrúti", grams: 140, kcal100: 45, p100: 0.8, c100: 11.6, g100: 0.1, fib100: 1.8, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Morango fresco", sector: "Hortifrúti", grams: 120, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" }
+  ];
+
+  const FALLBACK_VEGS = [
+    { name: "Tomate e alface (salada)", sector: "Hortifrúti", grams: 110, kcal100: 16, p100: 1.0, c100: 3.1, g100: 0.2, fib100: 1.4, scalable: false, isBatch: false, role: "veg" },
+    { name: "Cenoura e vagem refogadas", sector: "Hortifrúti", grams: 100, kcal100: 38, p100: 1.4, c100: 8.2, g100: 0.2, fib100: 2.8, scalable: false, isBatch: false, role: "veg" },
+    { name: "Brócolis cozido", sector: "Hortifrúti", grams: 100, kcal100: 25, p100: 2.1, c100: 4.4, g100: 0.5, fib100: 3.4, scalable: false, isBatch: false, role: "veg" },
+    { name: "Abobrinha grelhada", sector: "Hortifrúti", grams: 100, kcal100: 19, p100: 1.1, c100: 3.5, g100: 0.2, fib100: 1.4, scalable: false, isBatch: false, role: "veg" },
+    { name: "Abóbora cabotiá cozida", sector: "Hortifrúti", grams: 110, kcal100: 48, p100: 1.4, c100: 10.8, g100: 0.7, fib100: 2.5, scalable: false, isBatch: false, role: "veg" }
+  ];
 
   function normalizeText(text) {
     return String(text || "")
@@ -42,7 +57,6 @@ window.DietEngine = (function () {
     const idade = Number(profile.idade);
     const isMale = profile.sexo === "M";
 
-    // Mifflin-St Jeor
     const tmb = 10 * peso + 6.25 * altura - 5 * idade + (isMale ? 5 : -161);
     const factor = ACTIVITY_FACTORS[profile.atividade] || 1.375;
     const get = tmb * factor;
@@ -83,31 +97,68 @@ window.DietEngine = (function () {
     };
   }
 
-  function isRecipeAllowed(recipe, restrictions, dislikes) {
+  function matchesDislike(text, dislikes) {
+    if (!dislikes || dislikes.length === 0) return false;
+    const norm = normalizeText(text);
+    for (const item of dislikes) {
+      if (item.length >= 3 && norm.includes(item)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Adapta acompanhamentos (frutas/legumes) caso o usuário não goste de um acompanhamento específico,
+  // e só descarta a receita se o ingrediente principal (core) for incompatível com as restrições/aversões.
+  function adaptAndFilterRecipe(recipe, restrictions, dislikes) {
     const tags = recipe.tags || [];
-    if (restrictions.includes("sem_lactose") && tags.includes("lactose")) return false;
-    if (restrictions.includes("sem_gluten") && tags.includes("gluten")) return false;
-    if (restrictions.includes("sem_ovo") && tags.includes("ovo")) return false;
-    if (restrictions.includes("sem_peixe") && tags.includes("peixe")) return false;
-    if (restrictions.includes("sem_carne_vermelha") && tags.includes("carne_vermelha")) return false;
+    if (restrictions.includes("sem_lactose") && tags.includes("lactose")) return null;
+    if (restrictions.includes("sem_gluten") && tags.includes("gluten")) return null;
+    if (restrictions.includes("sem_ovo") && tags.includes("ovo")) return null;
+    if (restrictions.includes("sem_peixe") && tags.includes("peixe")) return null;
+    if (restrictions.includes("sem_carne_vermelha") && tags.includes("carne_vermelha")) return null;
     if (
       restrictions.includes("vegetariano") &&
       (tags.includes("frango") || tags.includes("carne_vermelha") || tags.includes("peixe"))
     ) {
-      return false;
+      return null;
     }
 
-    if (dislikes.length > 0) {
-      const recipeText = normalizeText(
-        recipe.name + " " + recipe.ingredients.map((i) => i.name).join(" ")
-      );
-      for (const item of dislikes) {
-        if (item.length >= 3 && recipeText.includes(item)) {
-          return false;
+    const adaptedIngredients = [];
+    let adaptedName = recipe.name;
+
+    for (const ing of recipe.ingredients) {
+      if (!matchesDislike(ing.name, dislikes)) {
+        adaptedIngredients.push(ing);
+        continue;
+      }
+
+      // Se for fruta ou legume de acompanhamento, tenta substituir por outro que o usuário goste
+      if (ing.role === "fruit") {
+        const replacement = FALLBACK_FRUITS.find((f) => !matchesDislike(f.name, dislikes));
+        if (replacement) {
+          adaptedIngredients.push({ ...replacement });
+          adaptedName = adaptedName.replace(/mamão|banana|maçã|morango/gi, replacement.name.split(" ")[0].toLowerCase());
+          continue;
+        }
+      } else if (ing.role === "veg") {
+        const replacement = FALLBACK_VEGS.find((v) => !matchesDislike(v.name, dislikes));
+        if (replacement) {
+          adaptedIngredients.push({ ...replacement });
+          adaptedName = adaptedName.replace(/brócolis|abobrinha|abóbora|cenoura|salada/gi, "legumes");
+          continue;
         }
       }
+
+      // Ingrediente principal na lista de aversões -> descarta a receita
+      return null;
     }
-    return true;
+
+    return {
+      ...recipe,
+      name: adaptedName,
+      ingredients: adaptedIngredients
+    };
   }
 
   function computeRecipeMacros(ingredients) {
@@ -136,12 +187,17 @@ window.DietEngine = (function () {
   }
 
   function scaleRecipe(recipe, scaleFactor) {
-    const clamped = Math.min(1.8, Math.max(0.6, scaleFactor));
+    const clamped = Math.min(1.85, Math.max(0.55, scaleFactor));
     const scaledIngredients = recipe.ingredients.map((ing) => {
       const newGrams = ing.scalable ? roundTo5(ing.grams * clamped) : ing.grams;
+      const factor = newGrams / 100;
       return {
         ...ing,
-        grams: newGrams
+        grams: newGrams,
+        kcal: Math.round(ing.kcal100 * factor),
+        protein: Math.round(ing.p100 * factor),
+        carbs: Math.round(ing.c100 * factor),
+        fat: Math.round(ing.g100 * factor)
       };
     });
     const macros = computeRecipeMacros(scaledIngredients);
@@ -155,9 +211,9 @@ window.DietEngine = (function () {
   function getSlotTemplate(mealCount) {
     if (mealCount === 3) {
       return [
-        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.25 },
+        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.26 },
         { key: "almoco", label: "Almoço", category: "principal", share: 0.40 },
-        { key: "jantar", label: "Jantar", category: "principal", share: 0.35 }
+        { key: "jantar", label: "Jantar", category: "principal", share: 0.34 }
       ];
     }
     if (mealCount === 5) {
@@ -169,7 +225,6 @@ window.DietEngine = (function () {
         { key: "jantar", label: "Jantar", category: "principal", share: 0.24 }
       ];
     }
-    // Padrão 4 refeições
     return [
       { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.22 },
       { key: "almoco", label: "Almoço", category: "principal", share: 0.34 },
@@ -185,81 +240,10 @@ window.DietEngine = (function () {
     return Math.round(grams) + " g";
   }
 
-  function generatePlan(profile) {
-    const targets = calculateTargets(profile);
-    const restrictions = profile.restricoes || [];
-    const selectedDislikes = (profile.aversoesSelecionadas || []).flatMap((item) =>
-      String(item)
-        .split("/")
-        .map(normalizeText)
-        .filter(Boolean)
-    );
-    const typedDislikes = (profile.aversoes || "")
-      .split(",")
-      .map(normalizeText)
-      .filter(Boolean);
-    const dislikes = Array.from(new Set([...selectedDislikes, ...typedDislikes]));
-
-    const bank = window.RECIPE_BANK || [];
-    const filterByCat = (cat) => {
-      const allowed = bank.filter(
-        (r) => r.category === cat && isRecipeAllowed(r, restrictions, dislikes)
-      );
-      if (allowed.length > 0) return allowed;
-      // Fallback caso aversões em texto livre zerem alguma categoria: respeita ao menos restrições clínicas
-      const safeFallback = bank.filter(
-        (r) => r.category === cat && isRecipeAllowed(r, restrictions, [])
-      );
-      return safeFallback.length > 0 ? safeFallback : bank.filter((r) => r.category === cat);
-    };
-
-    const maxMain = profile.variacao === "variada" ? 3 : 2;
-    const maxOther = profile.variacao === "variada" ? 2 : 2;
-
-    const poolCafe = filterByCat("cafe").slice(0, maxOther);
-    const poolPrincipal = filterByCat("principal").slice(0, maxMain);
-    const poolLanche = filterByCat("lanche").slice(0, maxOther);
-
-    const slots = getSlotTemplate(Number(profile.refeicoes) || 4);
-
-    // Pré-escala cada receita selecionada para seu papel típico
-    const scaledRegistry = new Map();
-    function getScaledForSlot(recipe, targetSlotKcal) {
-      const key = `${recipe.id}__${Math.round(targetSlotKcal / 25) * 25}`;
-      if (!scaledRegistry.has(key)) {
-        const baseMacros = computeRecipeMacros(recipe.ingredients);
-        const factor = baseMacros.kcal > 0 ? targetSlotKcal / baseMacros.kcal : 1;
-        scaledRegistry.set(key, scaleRecipe(recipe, factor));
-      }
-      return scaledRegistry.get(key);
-    }
-
-    const days = DAYS_OF_WEEK.map((dayName, dayIndex) => {
-      const meals = slots.map((slot, slotIndex) => {
-        const pool =
-          slot.category === "cafe"
-            ? poolCafe
-            : slot.category === "principal"
-            ? poolPrincipal
-            : poolLanche;
-
-        // Alterna com baixa variação semanal
-        const pickIndex =
-          slot.category === "principal"
-            ? (dayIndex + (slot.key === "jantar" ? 1 : 0)) % pool.length
-            : (dayIndex + slotIndex) % pool.length;
-
-        const baseRecipe = pool[pickIndex];
-        const slotTargetKcal = targets.kcal * slot.share;
-        const scaled = getScaledForSlot(baseRecipe, slotTargetKcal);
-
-        return {
-          slotLabel: slot.label,
-          recipe: scaled
-        };
-      });
-
-      const totals = meals.reduce(
+  function recomputePlanAggregates(plan) {
+    const days = plan.days;
+    days.forEach((day) => {
+      day.totals = day.meals.reduce(
         (acc, m) => ({
           kcal: acc.kcal + m.recipe.macros.kcal,
           protein: acc.protein + m.recipe.macros.protein,
@@ -269,15 +253,8 @@ window.DietEngine = (function () {
         }),
         { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
       );
-
-      return {
-        dayName,
-        meals,
-        totals
-      };
     });
 
-    // Médias reais da semana
     const weeklyAvg = days.reduce(
       (acc, d) => ({
         kcal: acc.kcal + d.totals.kcal / 7,
@@ -288,12 +265,10 @@ window.DietEngine = (function () {
       }),
       { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
     );
-
     Object.keys(weeklyAvg).forEach((k) => {
       weeklyAvg[k] = Math.round(weeklyAvg[k]);
     });
 
-    // Receitas únicas usadas na semana + contagem de porções
     const uniqueRecipesMap = new Map();
     const batchItemsMap = new Map();
     const freshItemsMap = new Map();
@@ -351,26 +326,192 @@ window.DietEngine = (function () {
     };
 
     const uniqueRecipes = Array.from(uniqueRecipesMap.values());
-    const freezerBatches = uniqueRecipes.filter((entry) => entry.recipe.freezable);
+    plan.weeklyAvg = weeklyAvg;
+    plan.uniqueRecipes = uniqueRecipes;
+    plan.freezerBatches = uniqueRecipes.filter((entry) => entry.recipe.freezable);
+    plan.shopping = {
+      lote: groupBySector(batchItemsMap),
+      frescos: groupBySector(freshItemsMap)
+    };
+    return plan;
+  }
 
-    return {
+  function generatePlan(profile) {
+    const targets = calculateTargets(profile);
+    const restrictions = profile.restricoes || [];
+    const selectedDislikes = (profile.aversoesSelecionadas || []).flatMap((item) =>
+      String(item)
+        .split("/")
+        .map(normalizeText)
+        .filter(Boolean)
+    );
+    const typedDislikes = (profile.aversoes || "")
+      .split(",")
+      .map(normalizeText)
+      .filter(Boolean);
+    const dislikes = Array.from(new Set([...selectedDislikes, ...typedDislikes]));
+
+    const bank = window.RECIPE_BANK || [];
+    const filterByCat = (cat) => {
+      const adapted = bank
+        .filter((r) => r.category === cat)
+        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes))
+        .filter(Boolean);
+
+      if (adapted.length >= 2) return adapted;
+
+      // Se o usuário marcou aversões demais que deixaram menos de 2 opções, mantém travas clínicas
+      const clinicalSafe = bank
+        .filter((r) => r.category === cat)
+        .map((r) => adaptAndFilterRecipe(r, restrictions, []))
+        .filter(Boolean);
+
+      return clinicalSafe.length > 0 ? clinicalSafe : bank.filter((r) => r.category === cat);
+    };
+
+    const isPratica = profile.variacao === "pratica";
+    const poolCafe = filterByCat("cafe").slice(0, isPratica ? 4 : 12);
+    const poolPrincipal = filterByCat("principal").slice(0, isPratica ? 6 : 16);
+    const poolLanche = filterByCat("lanche").slice(0, isPratica ? 4 : 10);
+
+    const poolsByCategory = {
+      cafe: poolCafe,
+      principal: poolPrincipal,
+      lanche: poolLanche
+    };
+
+    const slots = getSlotTemplate(Number(profile.refeicoes) || 4);
+
+    function scaleForTarget(recipe, targetSlotKcal) {
+      const baseMacros = computeRecipeMacros(recipe.ingredients);
+      const factor = baseMacros.kcal > 0 ? targetSlotKcal / baseMacros.kcal : 1;
+      return scaleRecipe(recipe, factor);
+    }
+
+    let cafeCursor = 0;
+    let lancheCursor = 0;
+
+    const days = DAYS_OF_WEEK.map((dayName, dayIndex) => {
+      // Escolhe almoço e jantar garantindo que NUNCA sejam iguais no mesmo dia nem repitam o dia anterior
+      const almocoIdx = (dayIndex * 2) % poolPrincipal.length;
+      let jantarIdx = (dayIndex * 2 + 1) % poolPrincipal.length;
+      if (jantarIdx === almocoIdx && poolPrincipal.length > 1) {
+        jantarIdx = (almocoIdx + 1) % poolPrincipal.length;
+      }
+
+      const meals = slots.map((slot) => {
+        const pool = poolsByCategory[slot.category];
+        let pickIndex = 0;
+
+        if (slot.key === "almoco") {
+          pickIndex = almocoIdx;
+        } else if (slot.key === "jantar") {
+          pickIndex = jantarIdx;
+        } else if (slot.category === "cafe") {
+          pickIndex = cafeCursor % pool.length;
+          cafeCursor += 1;
+        } else {
+          pickIndex = lancheCursor % pool.length;
+          lancheCursor += 1;
+        }
+
+        const slotTargetKcal = targets.kcal * slot.share;
+        const optionCount = Math.min(3, pool.length);
+        const options = [];
+        for (let k = 0; k < optionCount; k++) {
+          const idx = (pickIndex + k * 2 + (k > 0 ? 1 : 0)) % pool.length;
+          const candidate = pool[idx];
+          if (!options.some((o) => o.id === candidate.id)) {
+            options.push(scaleForTarget(candidate, slotTargetKcal));
+          }
+        }
+        // Completa até 3 opções distintas se necessário
+        for (let k = 0; k < pool.length && options.length < optionCount; k++) {
+          const candidate = pool[(pickIndex + k) % pool.length];
+          if (!options.some((o) => o.id === candidate.id)) {
+            options.push(scaleForTarget(candidate, slotTargetKcal));
+          }
+        }
+
+        return {
+          slotKey: slot.key,
+          slotLabel: slot.label,
+          category: slot.category,
+          share: slot.share,
+          poolIndex: pickIndex,
+          activeOptionIndex: 0,
+          options,
+          recipe: options[0]
+        };
+      });
+
+      return {
+        dayName,
+        meals,
+        totals: { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+      };
+    });
+
+    const plan = {
       profile: {
         ...profile,
         objetivoLabel: GOAL_LABELS[profile.objetivo] || profile.objetivo
       },
       targets,
-      weeklyAvg,
-      days,
-      uniqueRecipes,
-      freezerBatches,
-      shopping: {
-        lote: groupBySector(batchItemsMap),
-        frescos: groupBySector(freshItemsMap)
-      }
+      poolsByCategory,
+      days
     };
+
+    return recomputePlanAggregates(plan);
+  }
+
+  // Seleciona uma das 3 opções da refeição ou gira para novas opções do banco
+  function selectMealOption(plan, dayIndex, mealIndex, optionIndex) {
+    const day = plan.days[dayIndex];
+    if (!day || !day.meals[mealIndex]) return plan;
+
+    const meal = day.meals[mealIndex];
+    if (!meal.options || !meal.options[optionIndex]) return plan;
+
+    meal.activeOptionIndex = optionIndex;
+    meal.recipe = meal.options[optionIndex];
+    return recomputePlanAggregates(plan);
+  }
+
+  // Permite girar as 3 opções de uma refeição específica para novas receitas do banco
+  function swapMealInPlan(plan, dayIndex, mealIndex) {
+    const day = plan.days[dayIndex];
+    if (!day || !day.meals[mealIndex]) return plan;
+
+    const meal = day.meals[mealIndex];
+    const pool = plan.poolsByCategory[meal.category] || [];
+    if (pool.length <= 1) return plan;
+
+    const nextPoolIndex = ((meal.poolIndex || 0) + 1) % pool.length;
+    const slotTargetKcal = plan.targets.kcal * (meal.share || 0.25);
+    const optionCount = Math.min(3, pool.length);
+    const options = [];
+
+    for (let k = 0; k < pool.length && options.length < optionCount; k++) {
+      const candidate = pool[(nextPoolIndex + k) % pool.length];
+      if (!options.some((o) => o.id === candidate.id)) {
+        const baseMacros = computeRecipeMacros(candidate.ingredients);
+        const factor = baseMacros.kcal > 0 ? slotTargetKcal / baseMacros.kcal : 1;
+        options.push(scaleRecipe(candidate, factor));
+      }
+    }
+
+    meal.poolIndex = nextPoolIndex;
+    meal.activeOptionIndex = 0;
+    meal.options = options;
+    meal.recipe = options[0];
+
+    return recomputePlanAggregates(plan);
   }
 
   return {
-    generatePlan
+    generatePlan,
+    selectMealOption,
+    swapMealInPlan
   };
 })();
