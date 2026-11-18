@@ -48,6 +48,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -239,6 +243,7 @@ h3 {
 }
 
 .form-group-card {
+  display: flow-root;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -248,23 +253,40 @@ h3 {
 }
 
 .form-group-card legend {
+  float: left;
+  width: 100%;
   font-family: var(--font-serif);
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
-  padding: 0 var(--space-xs);
+  padding: 0 0 var(--space-sm);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .form-grid {
+  clear: both;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-md);
-  margin-top: var(--space-xs);
+}
+
+@media (max-width: 820px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .field {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: var(--space-xs);
 }
 
@@ -281,6 +303,7 @@ h3 {
 .field input,
 .field select {
   width: 100%;
+  margin-top: auto;
   padding: var(--space-xs) var(--space-sm);
   font-family: var(--font-sans);
   font-size: 1rem;
@@ -300,9 +323,10 @@ h3 {
 }
 
 .field-hint {
+  clear: both;
   font-size: 0.925rem;
   color: var(--text-secondary);
-  margin: var(--space-xs) 0 var(--space-sm);
+  margin: 0 0 var(--space-sm);
 }
 
 .checkbox-grid {
