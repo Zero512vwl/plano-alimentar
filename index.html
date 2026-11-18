@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#2f5d50">
   <meta name="description" content="Gerador gratuito de plano alimentar semanal com cálculo de calorias, receitas práticas, lista de compras por setor e exportação em PDF.">
   <title>Plano Alimentar: Cardápio, Receitas e Compras</title>
-  <link rel="manifest" href="./manifest.json?v=4">
-  <link rel="stylesheet" href="./styles.css?v=4">
+  <link rel="manifest" href="./manifest.json?v=5">
+  <link rel="stylesheet" href="./styles.css?v=5">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
@@ -51,9 +51,9 @@
               <div class="field">
                 <label for="objetivo">Objetivo principal</label>
                 <select id="objetivo" name="objetivo" required>
-                  <option value="emagrecimento">Emagrecimento (perder gordura)</option>
-                  <option value="recomposicao">Recomposição (perder gordura e ganhar firmeza)</option>
-                  <option value="manutencao">Manutenção (saúde e organização)</option>
+                  <option value="emagrecimento">Emagrecimento</option>
+                  <option value="recomposicao">Recomposição corporal</option>
+                  <option value="manutencao">Manutenção e saúde</option>
                   <option value="hipertrofia">Ganho de massa muscular</option>
                 </select>
               </div>
@@ -87,29 +87,29 @@
             <legend>2. Rotina de movimento e refeições</legend>
             <div class="form-grid">
               <div class="field">
-                <label for="atividade">Nível de atividade física na semana</label>
+                <label for="atividade">Nível de atividade física</label>
                 <select id="atividade" name="atividade" required>
-                  <option value="sedentario">Pouco movimento (trabalho sentado, sem treino)</option>
-                  <option value="leve" selected>Leve (caminhadas ou treino 1 a 2x na semana)</option>
-                  <option value="moderado">Moderado (treino 3 a 4x na semana)</option>
-                  <option value="intenso">Intenso (treino 5x ou mais na semana)</option>
+                  <option value="sedentario">Sedentário (sem treino)</option>
+                  <option value="leve" selected>Leve (1 a 2x na semana)</option>
+                  <option value="moderado">Moderado (3 a 4x na semana)</option>
+                  <option value="intenso">Intenso (5x ou mais)</option>
                 </select>
               </div>
 
               <div class="field">
-                <label for="refeicoes">Quantas refeições faz por dia?</label>
+                <label for="refeicoes">Refeições por dia</label>
                 <select id="refeicoes" name="refeicoes" required>
-                  <option value="3">3 refeições (Café, Almoço e Jantar)</option>
-                  <option value="4" selected>4 refeições (Café, Almoço, Lanche da tarde e Jantar)</option>
-                  <option value="5">5 refeições (inclui Lanche da manhã)</option>
+                  <option value="3">3 refeições por dia</option>
+                  <option value="4" selected>4 refeições por dia</option>
+                  <option value="5">5 refeições por dia</option>
                 </select>
               </div>
 
               <div class="field">
                 <label for="variacao">Preferência de praticidade</label>
                 <select id="variacao" name="variacao">
-                  <option value="pratica" selected>Mais prático (repetir 2 opções na semana e congelar)</option>
-                  <option value="variada">Um pouco mais variado (alternar mais preparos)</option>
+                  <option value="pratica" selected>Prático (repetir e congelar)</option>
+                  <option value="variada">Variado (alternar preparos)</option>
                 </select>
               </div>
             </div>
@@ -271,8 +271,8 @@
     </div>
   </footer>
 
-  <script src="./recipes.js?v=4"></script>
-  <script src="./engine.js?v=4"></script>
-  <script src="./app.js?v=4"></script>
+  <script src="./recipes.js?v=5"></script>
+  <script src="./engine.js?v=5"></script>
+  <script src="./app.js?v=5"></script>
 </body>
 </html>
