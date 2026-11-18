@@ -1,6 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v10";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -117,6 +118,23 @@
   function saveProfile(profile) {
     try {
       localStorage.setItem(STORAGE_PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+      // Ignora erro se localStorage estiver bloqueado
+    }
+  }
+
+  function loadSavedPlan() {
+    try {
+      const raw = localStorage.getItem(STORAGE_PLAN_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function savePlan(plan) {
+    try {
+      localStorage.setItem(STORAGE_PLAN_KEY, JSON.stringify(plan));
     } catch {
       // Ignora erro se localStorage estiver bloqueado
     }
@@ -259,6 +277,10 @@
           ? '<span class="badge-freeze">Congelável em lote</span>'
           : "";
 
+        const optionalTag = m.isOptional
+          ? '<span class="badge-optional">Opcional: fora da meta principal</span>'
+          : "";
+
         const swapBtn = !isPrint
           ? `<button type="button" class="btn btn-secondary btn-small btn-swap no-print" data-day-idx="${dayIdx}" data-meal-idx="${mealIdx}">Girar opções</button>`
           : "";
@@ -288,32 +310,36 @@
 
         const alternativesHtml =
           otherOptions.length > 0
-            ? `<div class="meal-alternatives">
-                <strong class="alt-heading">Outras opções equivalentes para substituir:</strong>
-                <ul class="alt-list">
-                  ${otherOptions
-                    .map(({ opt, idx }) => {
-                      const hasWhey = (opt.tags || []).includes("whey");
-                      const wheyTag = hasWhey ? " [Com Whey]" : "";
-                      const shortIngs = opt.ingredients
-                        .map((i) => `${i.grams}g ${escapeHtml(i.name)} (${i.kcal || 0} kcal)`)
-                        .join(", ");
-                      return `<li><strong>Opção ${idx + 1}${wheyTag}: ${escapeHtml(opt.name)}</strong> (${opt.macros.kcal} kcal | P ${opt.macros.protein}g | C ${opt.macros.carbs}g | G ${opt.macros.fat}g) <span class="alt-ings">${shortIngs}</span></li>`;
-                    })
-                    .join("")}
-                </ul>
-              </div>`
+            ? isPrint
+              ? `<p class="print-alt-line"><strong>Substituições equivalentes:</strong> ${otherOptions
+                  .map(({ opt, idx }) => `Opção ${idx + 1}: ${escapeHtml(opt.name)} (${opt.macros.kcal} kcal)`)
+                  .join(" | ")}</p>`
+              : `<details class="meal-alternatives no-print">
+                  <summary class="alt-heading">Ver outras opções equivalentes (${otherOptions.length})</summary>
+                  <ul class="alt-list">
+                    ${otherOptions
+                      .map(({ opt, idx }) => {
+                        const hasWhey = (opt.tags || []).includes("whey");
+                        const wheyTag = hasWhey ? " [Com Whey]" : "";
+                        const shortIngs = opt.ingredients
+                          .map((i) => `${i.grams}g ${escapeHtml(i.name)} (${i.kcal || 0} kcal)`)
+                          .join(", ");
+                        return `<li><strong>Opção ${idx + 1}${wheyTag}: ${escapeHtml(opt.name)}</strong> (${opt.macros.kcal} kcal | P ${opt.macros.protein}g | C ${opt.macros.carbs}g | G ${opt.macros.fat}g) <span class="alt-ings">${shortIngs}</span></li>`;
+                      })
+                      .join("")}
+                  </ul>
+                </details>`
             : "";
 
         return `
-          <article class="meal-card">
+          <article class="meal-card ${m.isOptional ? "meal-card-optional" : ""}">
             <div class="meal-card-top">
               <span class="meal-slot-label">${escapeHtml(m.slotLabel)}</span>
               ${swapBtn}
             </div>
             ${optionTabsHtml}
             <h3>${escapeHtml(r.name)}</h3>
-            ${freezeTag}
+            <div class="meal-badges">${freezeTag}${optionalTag}</div>
             <p class="meal-macros"><strong>${r.macros.kcal} kcal</strong> | P ${r.macros.protein}g | C ${r.macros.carbs}g | G ${r.macros.fat}g | Fibras ${r.macros.fiber}g</p>
             <ul class="meal-ingredients">${ingList}</ul>
             ${alternativesHtml}
@@ -322,10 +348,14 @@
       })
       .join("");
 
+    const ceiaNote = day.optionalCeiaKcal
+      ? ` | Ceia opcional: +${day.optionalCeiaKcal} kcal`
+      : "";
+
     return `
       <div class="day-header-bar">
         <h2>${escapeHtml(day.dayName)}</h2>
-        <span class="day-macros-line">Total do dia: ${day.totals.kcal} kcal | Proteína ${day.totals.protein}g | Carbo ${day.totals.carbs}g | Gordura ${day.totals.fat}g | Fibras ${day.totals.fiber}g</span>
+        <span class="day-macros-line">Total das refeições principais: ${day.totals.kcal} kcal | Proteína ${day.totals.protein}g | Carbo ${day.totals.carbs}g | Gordura ${day.totals.fat}g | Fibras ${day.totals.fiber}g${ceiaNote}</span>
       </div>
       <div class="meals-list">${mealsHtml}</div>
     `;
@@ -363,6 +393,7 @@
         const mIdx = Number(btn.dataset.mealIdx);
         const oIdx = Number(btn.dataset.optIdx);
         window.DietEngine.selectMealOption(plan, dIdx, mIdx, oIdx);
+        savePlan(plan);
         renderMetrics(plan);
         renderDays(plan);
         renderRecipes(plan);
@@ -376,6 +407,7 @@
         const dIdx = Number(btn.dataset.dayIdx);
         const mIdx = Number(btn.dataset.mealIdx);
         window.DietEngine.swapMealInPlan(plan, dIdx, mIdx);
+        savePlan(plan);
         renderMetrics(plan);
         renderDays(plan);
         renderRecipes(plan);
@@ -545,7 +577,8 @@
     activeDayIndex = 0;
 
     document.getElementById("plan-heading").textContent = `Plano semanal de ${plan.profile.nome}`;
-    const summaryText = `Objetivo: ${plan.profile.objetivoLabel} | ${plan.profile.refeicoes} refeições por dia | Peso: ${plan.profile.peso} kg`;
+    const variacaoText = plan.profile.variacao === "pratica" ? "Modo prático (lotes)" : "Modo variado";
+    const summaryText = `Objetivo: ${plan.profile.objetivoLabel} | ${plan.profile.refeicoes} refeições principais + Ceia opcional | ${variacaoText} | Peso: ${plan.profile.peso} kg`;
     document.getElementById("plan-profile-summary").textContent = summaryText;
     document.getElementById("print-subtitle").textContent = `${plan.profile.nome} — ${summaryText}`;
 
@@ -702,6 +735,7 @@
     formError.hidden = true;
     saveProfile(profile);
     const plan = window.DietEngine.generatePlan(profile);
+    savePlan(plan);
     showPlan(plan);
   });
 
@@ -723,16 +757,30 @@
     if (currentPlan) renderShopping(currentPlan);
   });
 
-  function applyTheme(mode) {
-    const validMode = mode === "light" ? "light" : "dark";
-    document.documentElement.dataset.mode = validMode;
+  function getEffectiveTheme() {
+    const attr = document.documentElement.dataset.mode;
+    if (attr === "light" || attr === "dark") return attr;
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  function updateThemeButtonLabel() {
+    const effective = getEffectiveTheme();
     if (btnThemeToggle) {
-      btnThemeToggle.textContent = validMode === "dark" ? "Tema claro" : "Tema escuro";
+      btnThemeToggle.textContent = effective === "dark" ? "Tema claro" : "Tema escuro";
     }
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute("content", validMode === "dark" ? "#0f1520" : "#f2f5f9");
+      metaTheme.setAttribute("content", effective === "dark" ? "#0f1520" : "#f2f5f9");
     }
+  }
+
+  function applyTheme(mode) {
+    const validMode = mode === "light" ? "light" : "dark";
+    document.documentElement.dataset.mode = validMode;
+    updateThemeButtonLabel();
     try {
       localStorage.setItem(STORAGE_THEME_KEY, validMode);
     } catch {
@@ -741,9 +789,9 @@
   }
 
   if (btnThemeToggle) {
-    applyTheme(document.documentElement.dataset.mode || "dark");
+    updateThemeButtonLabel();
     btnThemeToggle.addEventListener("click", () => {
-      const current = document.documentElement.dataset.mode === "light" ? "light" : "dark";
+      const current = getEffectiveTheme();
       applyTheme(current === "dark" ? "light" : "dark");
     });
   }
@@ -754,7 +802,13 @@
   const savedProfile = loadProfile();
   if (savedProfile) {
     fillFormFromProfile(savedProfile);
-    const plan = window.DietEngine.generatePlan(savedProfile);
-    showPlan(plan);
+    const savedPlan = loadSavedPlan();
+    if (savedPlan && savedPlan.days && savedPlan.days.length === 7) {
+      showPlan(savedPlan);
+    } else {
+      const plan = window.DietEngine.generatePlan(savedProfile);
+      savePlan(plan);
+      showPlan(plan);
+    }
   }
 })();

@@ -73,6 +73,15 @@ window.DietEngine = (function () {
     const minSafeKcal = isMale ? 1400 : 1200;
     kcalTarget = Math.round(Math.max(minSafeKcal, kcalTarget) / 10) * 10;
 
+    // Usa peso ajustado para cálculo de proteína quando IMC >= 30 (evita superestimar proteína)
+    const heightM = altura / 100;
+    const bmi = heightM > 0 ? peso / (heightM * heightM) : 22;
+    let pesoRefProteina = peso;
+    if (bmi >= 30) {
+      const idealWeight = 25 * (heightM * heightM);
+      pesoRefProteina = idealWeight + 0.25 * (peso - idealWeight);
+    }
+
     const proteinPerKg =
       profile.objetivo === "hipertrofia" || profile.objetivo === "recomposicao"
         ? 1.9
@@ -80,8 +89,8 @@ window.DietEngine = (function () {
         ? 1.8
         : 1.5;
 
-    const proteinG = Math.round(peso * proteinPerKg);
-    const fatG = Math.round(Math.max(peso * 0.75, (kcalTarget * 0.25) / 9));
+    const proteinG = Math.round(pesoRefProteina * proteinPerKg);
+    const fatG = Math.round(Math.max(pesoRefProteina * 0.75, (kcalTarget * 0.25) / 9));
     const remainingKcal = Math.max(200, kcalTarget - proteinG * 4 - fatG * 9);
     const carbG = Math.round(remainingKcal / 4);
     const fiberG = Math.round(Math.max(24, (kcalTarget / 1000) * 14));
@@ -109,10 +118,12 @@ window.DietEngine = (function () {
   }
 
   // Adapta acompanhamentos (frutas/legumes) caso o usuário não goste de um acompanhamento específico,
-  // e só descarta a receita se o ingrediente principal (core) for incompatível com as restrições/aversões.
+  // e bloqueia rigorosamente qualquer receita com lactose ou Whey concentrado quando sem_lactose estiver ativo.
   function adaptAndFilterRecipe(recipe, restrictions, dislikes) {
     const tags = recipe.tags || [];
-    if (restrictions.includes("sem_lactose") && tags.includes("lactose")) return null;
+    if (restrictions.includes("sem_lactose") && (tags.includes("lactose") || tags.includes("whey"))) {
+      return null;
+    }
     if (restrictions.includes("sem_gluten") && tags.includes("gluten")) return null;
     if (restrictions.includes("sem_ovo") && tags.includes("ovo")) return null;
     if (restrictions.includes("sem_peixe") && tags.includes("peixe")) return null;
@@ -133,24 +144,39 @@ window.DietEngine = (function () {
         continue;
       }
 
-      // Se for fruta ou legume de acompanhamento, tenta substituir por outro que o usuário goste
+      const alreadyInRecipe = (candidateName) =>
+        recipe.ingredients.some((i) => i.name === candidateName) ||
+        adaptedIngredients.some((i) => i.name === candidateName);
+
       if (ing.role === "fruit") {
-        const replacement = FALLBACK_FRUITS.find((f) => !matchesDislike(f.name, dislikes));
+        const replacement = FALLBACK_FRUITS.find(
+          (f) => !matchesDislike(f.name, dislikes) && !alreadyInRecipe(f.name)
+        );
         if (replacement) {
           adaptedIngredients.push({ ...replacement });
-          adaptedName = adaptedName.replace(/mamão|banana|maçã|morango/gi, replacement.name.split(" ")[0].toLowerCase());
+          const oldWord = ing.name.split(" ")[0];
+          const newWord = replacement.name.split(" ")[0].toLowerCase();
+          const regex = new RegExp(oldWord, "gi");
+          if (regex.test(adaptedName) && !normalizeText(adaptedName).includes(normalizeText(newWord))) {
+            adaptedName = adaptedName.replace(regex, newWord);
+          }
           continue;
         }
       } else if (ing.role === "veg") {
-        const replacement = FALLBACK_VEGS.find((v) => !matchesDislike(v.name, dislikes));
+        const replacement = FALLBACK_VEGS.find(
+          (v) => !matchesDislike(v.name, dislikes) && !alreadyInRecipe(v.name)
+        );
         if (replacement) {
           adaptedIngredients.push({ ...replacement });
-          adaptedName = adaptedName.replace(/brócolis|abobrinha|abóbora|cenoura|salada/gi, "legumes");
+          const oldWord = ing.name.split(" ")[0];
+          const regex = new RegExp(oldWord, "gi");
+          if (regex.test(adaptedName) && !normalizeText(adaptedName).includes("legumes")) {
+            adaptedName = adaptedName.replace(regex, "legumes");
+          }
           continue;
         }
       }
 
-      // Ingrediente principal na lista de aversões -> descarta a receita
       return null;
     }
 
@@ -208,24 +234,33 @@ window.DietEngine = (function () {
     };
   }
 
+  // As refeições principais somam 100% da meta calórica diária; a Ceia Noturna entra como opcional (isOptional: true)
   function getSlotTemplate(mealCount) {
-    if (mealCount === 5) {
+    if (mealCount === 3) {
       return [
-        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.20 },
-        { key: "lanche1", label: "Lanche da manhã", category: "lanche", share: 0.10 },
-        { key: "almoco", label: "Almoço", category: "principal", share: 0.28 },
-        { key: "lanche2", label: "Café da tarde", category: "lanche", share: 0.12 },
-        { key: "jantar", label: "Jantar", category: "principal", share: 0.20 },
-        { key: "ceia", label: "Ceia noturna (fome à noite ou madrugada)", category: "ceia", share: 0.10 }
+        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.26, isOptional: false },
+        { key: "almoco", label: "Almoço", category: "principal", share: 0.40, isOptional: false },
+        { key: "jantar", label: "Jantar", category: "principal", share: 0.34, isOptional: false },
+        { key: "ceia", label: "Ceia noturna (opcional: fome à noite ou madrugada)", category: "ceia", share: 0.12, isOptional: true }
       ];
     }
-    // Tanto para 3 quanto 4 refeições, exibe Café da manhã, Almoço, Café da tarde, Jantar e Ceia noturna
+    if (mealCount === 5) {
+      return [
+        { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.20, isOptional: false },
+        { key: "lanche1", label: "Lanche da manhã", category: "lanche", share: 0.10, isOptional: false },
+        { key: "almoco", label: "Almoço", category: "principal", share: 0.32, isOptional: false },
+        { key: "lanche2", label: "Café da tarde", category: "lanche", share: 0.12, isOptional: false },
+        { key: "jantar", label: "Jantar", category: "principal", share: 0.26, isOptional: false },
+        { key: "ceia", label: "Ceia noturna (opcional: fome à noite ou madrugada)", category: "ceia", share: 0.12, isOptional: true }
+      ];
+    }
+    // 4 refeições principais + Ceia opcional
     return [
-      { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.20 },
-      { key: "almoco", label: "Almoço", category: "principal", share: 0.30 },
-      { key: "lanche", label: "Café da tarde", category: "lanche", share: 0.13 },
-      { key: "jantar", label: "Jantar", category: "principal", share: 0.27 },
-      { key: "ceia", label: "Ceia noturna (fome à noite ou madrugada)", category: "ceia", share: 0.10 }
+      { key: "cafe", label: "Café da manhã", category: "cafe", share: 0.22, isOptional: false },
+      { key: "almoco", label: "Almoço", category: "principal", share: 0.35, isOptional: false },
+      { key: "lanche", label: "Café da tarde", category: "lanche", share: 0.15, isOptional: false },
+      { key: "jantar", label: "Jantar", category: "principal", share: 0.28, isOptional: false },
+      { key: "ceia", label: "Ceia noturna (opcional: fome à noite ou madrugada)", category: "ceia", share: 0.12, isOptional: true }
     ];
   }
 
@@ -239,7 +274,10 @@ window.DietEngine = (function () {
   function recomputePlanAggregates(plan) {
     const days = plan.days;
     days.forEach((day) => {
-      day.totals = day.meals.reduce(
+      const mainMeals = day.meals.filter((m) => !m.isOptional);
+      const ceiaMeal = day.meals.find((m) => m.isOptional);
+
+      day.totals = mainMeals.reduce(
         (acc, m) => ({
           kcal: acc.kcal + m.recipe.macros.kcal,
           protein: acc.protein + m.recipe.macros.protein,
@@ -249,6 +287,7 @@ window.DietEngine = (function () {
         }),
         { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
       );
+      day.optionalCeiaKcal = ceiaMeal ? ceiaMeal.recipe.macros.kcal : 0;
     });
 
     const weeklyAvg = days.reduce(
@@ -271,6 +310,7 @@ window.DietEngine = (function () {
 
     days.forEach((day) => {
       day.meals.forEach((meal) => {
+        if (meal.isOptional) return; // Ceia opcional não infla a compra base obrigatória
         const r = meal.recipe;
         if (!uniqueRecipesMap.has(r.id)) {
           uniqueRecipesMap.set(r.id, { recipe: r, count: 0 });
@@ -303,6 +343,7 @@ window.DietEngine = (function () {
         "Hortifrúti",
         "Laticínios & Ovos",
         "Mercearia & Grãos",
+        "Suplementos",
         "Temperos / Conferir em Casa"
       ];
       const grouped = {};
@@ -356,7 +397,6 @@ window.DietEngine = (function () {
 
       if (adapted.length >= 2) return adapted;
 
-      // Se o usuário marcou aversões demais que deixaram menos de 2 opções, mantém travas clínicas
       const clinicalSafe = bank
         .filter((r) => r.category === cat)
         .map((r) => adaptAndFilterRecipe(r, restrictions, []))
@@ -366,10 +406,19 @@ window.DietEngine = (function () {
     };
 
     const isPratica = profile.variacao === "pratica";
-    const poolCafe = filterByCat("cafe");
-    const poolPrincipal = filterByCat("principal");
-    const poolLanche = filterByCat("lanche");
-    const poolCeia = filterByCat("ceia");
+
+    // No modo Prático, limita as receitas sólidas da semana para facilitar lote/congelamento e enxugar a lista de compras
+    function capPool(list, maxSolid, maxWhey) {
+      if (!isPratica) return list;
+      const solids = list.filter((r) => !(r.tags || []).includes("whey")).slice(0, maxSolid);
+      const wheys = list.filter((r) => (r.tags || []).includes("whey")).slice(0, maxWhey);
+      return [...solids, ...wheys];
+    }
+
+    const poolCafe = capPool(filterByCat("cafe"), 2, 1);
+    const poolPrincipal = capPool(filterByCat("principal"), 3, 1);
+    const poolLanche = capPool(filterByCat("lanche"), 2, 1);
+    const poolCeia = capPool(filterByCat("ceia"), 2, 1);
 
     const poolsByCategory = {
       cafe: poolCafe,
@@ -386,7 +435,6 @@ window.DietEngine = (function () {
       return scaleRecipe(recipe, factor);
     }
 
-    // Monta 3 opções para a refeição garantindo opções sem Whey + pelo menos 1 opção com Whey (se disponível)
     function buildSlotOptions(pool, solidCursor, wheyCursor, targetSlotKcal, preferWheyFirst) {
       const solidList = pool.filter((r) => !(r.tags || []).includes("whey"));
       const wheyList = pool.filter((r) => (r.tags || []).includes("whey"));
@@ -405,7 +453,7 @@ window.DietEngine = (function () {
         if (wheyList.length > 1 && chosen.length < 3) addUnique(wheyList[(wheyCursor + 1) % wheyList.length]);
       } else {
         if (solidList.length > 0) addUnique(solidList[solidCursor % solidList.length]);
-        if (solidList.length > 1) addUnique(solidList[(solidCursor + (isPratica ? 1 : 2)) % solidList.length]);
+        if (solidList.length > 1) addUnique(solidList[(solidCursor + 1) % solidList.length]);
         if (wheyList.length > 0) addUnique(wheyList[wheyCursor % wheyList.length]);
       }
 
@@ -454,7 +502,10 @@ window.DietEngine = (function () {
           lancheCursor += 1;
         }
 
-        const slotTargetKcal = targets.kcal * slot.share;
+        const slotTargetKcal = slot.isOptional
+          ? Math.min(230, Math.max(170, targets.kcal * slot.share))
+          : targets.kcal * slot.share;
+
         const options = buildSlotOptions(
           pool,
           pickIndex,
@@ -468,6 +519,7 @@ window.DietEngine = (function () {
           slotLabel: slot.label,
           category: slot.category,
           share: slot.share,
+          isOptional: Boolean(slot.isOptional),
           poolIndex: pickIndex,
           activeOptionIndex: 0,
           options,
@@ -478,7 +530,8 @@ window.DietEngine = (function () {
       return {
         dayName,
         meals,
-        totals: { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+        totals: { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+        optionalCeiaKcal: 0
       };
     });
 
@@ -495,7 +548,6 @@ window.DietEngine = (function () {
     return recomputePlanAggregates(plan);
   }
 
-  // Seleciona uma das 3 opções da refeição ou gira para novas opções do banco
   function selectMealOption(plan, dayIndex, mealIndex, optionIndex) {
     const day = plan.days[dayIndex];
     if (!day || !day.meals[mealIndex]) return plan;
@@ -508,7 +560,6 @@ window.DietEngine = (function () {
     return recomputePlanAggregates(plan);
   }
 
-  // Permite girar as 3 opções de uma refeição específica mantendo opção sem Whey + opção com Whey
   function swapMealInPlan(plan, dayIndex, mealIndex) {
     const day = plan.days[dayIndex];
     if (!day || !day.meals[mealIndex]) return plan;
@@ -518,7 +569,9 @@ window.DietEngine = (function () {
     if (pool.length <= 1) return plan;
 
     const nextPoolIndex = (meal.poolIndex || 0) + 1;
-    const slotTargetKcal = plan.targets.kcal * (meal.share || 0.20);
+    const slotTargetKcal = meal.isOptional
+      ? Math.min(230, Math.max(170, plan.targets.kcal * (meal.share || 0.12)))
+      : plan.targets.kcal * (meal.share || 0.20);
     const solidList = pool.filter((r) => !(r.tags || []).includes("whey"));
     const wheyList = pool.filter((r) => (r.tags || []).includes("whey"));
     const options = [];

@@ -721,7 +721,7 @@ window.RECIPE_BANK = [
     prepTime: "8 min",
     thawNote: "Preparo na hora em fogo baixo.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 50, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "fruit" },
       { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 30, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
@@ -741,7 +741,7 @@ window.RECIPE_BANK = [
     prepTime: "4 min",
     thawNote: "Bater na hora.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 220, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
       { name: "Morango fresco", sector: "Hortifrúti", grams: 100, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" },
@@ -761,7 +761,7 @@ window.RECIPE_BANK = [
     prepTime: "6 min",
     thawNote: "Adicione o Whey após desligar o fogo.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 200, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
@@ -781,7 +781,7 @@ window.RECIPE_BANK = [
     prepTime: "4 min",
     thawNote: "Bater na hora (substitui almoço ou jantar corrido).",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 35, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: true, isBatch: false, unitHint: "aprox. 1 scoop e meio", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 35, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: true, isBatch: false, unitHint: "aprox. 1 scoop e meio", role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 260, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 45, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 110, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
@@ -802,7 +802,7 @@ window.RECIPE_BANK = [
     prepTime: "5 min",
     thawNote: "Montagem rápida sem fogão para almoço ou jantar leve.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 100, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
@@ -823,7 +823,7 @@ window.RECIPE_BANK = [
     prepTime: "8 min",
     thawNote: "Preparo rápido na hora.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
       { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 100, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "2 unidades", role: "core" },
       { name: "Goma de tapioca hidratada", sector: "Mercearia & Grãos", grams: 55, kcal100: 240, p100: 0.2, c100: 59.6, g100: 0, fib100: 0.5, scalable: true, isBatch: false, role: "core" },
       { name: "Queijo minas frescal", sector: "Laticínios & Ovos", grams: 40, kcal100: 264, p100: 17.4, c100: 3.2, g100: 20.2, fib100: 0, scalable: true, isBatch: false, role: "core" },
@@ -844,7 +844,7 @@ window.RECIPE_BANK = [
     prepTime: "3 min",
     thawNote: "Montagem na hora (pode gelar por 10 min).",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
       { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 57.9, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" }
     ],
@@ -863,7 +863,7 @@ window.RECIPE_BANK = [
     prepTime: "3 min",
     thawNote: "Bater ou agitar na coqueteleira.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "fruit" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 20, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
     ],
@@ -881,7 +881,7 @@ window.RECIPE_BANK = [
     prepTime: "2 min",
     thawNote: "Zero preparo de cozinha.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop em água (120 kcal)", role: "core" },
       { name: "Maçã fuji", sector: "Hortifrúti", grams: 120, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, role: "fruit" },
       { name: "Amendoim torrado sem sal / Castanha-do-pará", sector: "Mercearia & Grãos", grams: 15, kcal100: 606, p100: 22.0, c100: 15.0, g100: 53.0, fib100: 7.5, scalable: true, isBatch: false, role: "core" }
     ],
@@ -901,7 +901,7 @@ window.RECIPE_BANK = [
     prepTime: "3 min",
     thawNote: "Deixar hidratando na geladeira por 20 min ou desde cedo.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 150, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Semente de chia", sector: "Mercearia & Grãos", grams: 15, kcal100: 486, p100: 16.5, c100: 42.1, g100: 30.7, fib100: 34.4, scalable: false, estimated: true, role: "core" }
     ],
@@ -920,7 +920,7 @@ window.RECIPE_BANK = [
     prepTime: "5 min",
     thawNote: "Preparo rápido no micro-ondas ou fogão.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 25, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 150, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" }
     ],
@@ -939,7 +939,7 @@ window.RECIPE_BANK = [
     prepTime: "3 min",
     thawNote: "Montagem na hora.",
     ingredients: [
-      { name: "Whey Protein Concentrado ou Isolado", sector: "Mercearia & Grãos", grams: 25, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop raso (100 kcal)", role: "core" },
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 25, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop raso (100 kcal)", role: "core" },
       { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
       { name: "Morango fresco", sector: "Hortifrúti", grams: 80, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" }
     ],
