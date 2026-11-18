@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v14";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v15";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -168,6 +168,7 @@
     if (form.hora_acorda) form.hora_acorda.value = String(profile.hora_acorda ?? 6);
     if (form.trabalho_inicio) form.trabalho_inicio.value = String(profile.trabalho_inicio ?? 7);
     if (form.trabalho_fim) form.trabalho_fim.value = String(profile.trabalho_fim ?? 17);
+    if (form.hora_treino) form.hora_treino.value = String(profile.hora_treino ?? 18);
     if (form.hora_dorme) form.hora_dorme.value = String(profile.hora_dorme ?? 22.5);
     customMealHours = profile.customMealHours ? { ...profile.customMealHours } : {};
     form.aversoes.value = profile.aversoes || "";
@@ -216,6 +217,7 @@
       hora_acorda: form.hora_acorda ? Number(form.hora_acorda.value) : 6,
       trabalho_inicio: form.trabalho_inicio ? Number(form.trabalho_inicio.value) : 7,
       trabalho_fim: form.trabalho_fim ? Number(form.trabalho_fim.value) : 17,
+      hora_treino: form.hora_treino ? Number(form.hora_treino.value) : 18,
       hora_dorme: form.hora_dorme ? Number(form.hora_dorme.value) : 22.5,
       customMealHours: { ...customMealHours },
       restricoes,
@@ -739,11 +741,13 @@
     const tAcorda = document.getElementById("time_hora_acorda");
     const tInicio = document.getElementById("time_trabalho_inicio");
     const tFim = document.getElementById("time_trabalho_fim");
+    const tTreino = document.getElementById("time_hora_treino");
     const tDorme = document.getElementById("time_hora_dorme");
 
     if (tAcorda && document.activeElement !== tAcorda) tAcorda.value = fmt(profile.hora_acorda);
     if (tInicio && document.activeElement !== tInicio) tInicio.value = fmt(profile.trabalho_inicio);
     if (tFim && document.activeElement !== tFim) tFim.value = fmt(profile.trabalho_fim);
+    if (tTreino && document.activeElement !== tTreino) tTreino.value = fmt(profile.hora_treino);
     if (tDorme && document.activeElement !== tDorme) tDorme.value = fmt(profile.hora_dorme);
 
     const isFora = profile.rotina_trabalho === "fora_dia_todo";
@@ -751,6 +755,10 @@
     const wrapFim = document.getElementById("wrap_trabalho_fim");
     if (wrapInicio) wrapInicio.classList.toggle("is-dimmed", !isFora);
     if (wrapFim) wrapFim.classList.toggle("is-dimmed", !isFora);
+
+    const hasWorkout = profile.atividade !== "sedentario";
+    const wrapTreino = document.getElementById("wrap_hora_treino");
+    if (wrapTreino) wrapTreino.classList.toggle("is-dimmed", !hasWorkout);
 
     const strip = document.getElementById("schedule-preview-strip");
     if (strip && window.DietEngine.computeDailySchedule) {
@@ -829,6 +837,7 @@
       { rangeId: "hora_acorda", timeId: "time_hora_acorda" },
       { rangeId: "trabalho_inicio", timeId: "time_trabalho_inicio" },
       { rangeId: "trabalho_fim", timeId: "time_trabalho_fim" },
+      { rangeId: "hora_treino", timeId: "time_hora_treino" },
       { rangeId: "hora_dorme", timeId: "time_hora_dorme" }
     ];
 
@@ -840,6 +849,9 @@
           customMealHours = {};
           if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
             if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
+          }
+          if (rangeId === "hora_treino" && form.atividade && form.atividade.value === "sedentario") {
+            form.atividade.value = "leve";
           }
           updateSchedulePreview();
         });
@@ -855,13 +867,16 @@
             if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
               if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
             }
+            if (rangeId === "hora_treino" && form.atividade && form.atividade.value === "sedentario") {
+              form.atividade.value = "leve";
+            }
             updateSchedulePreview();
           }
         });
       }
     });
 
-    ["rotina_trabalho", "refeicoes"].forEach((id) => {
+    ["rotina_trabalho", "refeicoes", "atividade"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener("change", () => {

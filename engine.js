@@ -153,8 +153,85 @@ window.DietEngine = (function () {
     };
 
     const customHours = profile.customMealHours || {};
-    const baseSlots = getSlotTemplate(Number(profile.refeicoes) || 4);
-    return baseSlots.map((slot) => {
+    const mealCount = Number(profile.refeicoes) || 4;
+    const hasWorkout = Boolean(profile.atividade && profile.atividade !== "sedentario");
+    const rawTrainHour = Number(profile.hora_treino ?? 18);
+
+    const toRel = (h) => {
+      const norm = ((Number(h) % 24) + 24) % 24;
+      return norm < wake - 1.5 ? norm + 24 : norm;
+    };
+
+    const baseSlots = getSlotTemplate(mealCount).map((s) => ({ ...s }));
+
+    if (hasWorkout) {
+      const trainRel = toRel(rawTrainHour);
+      const preTrainRel =
+        trainRel <= wake + 1.0
+          ? roundQuarter(Math.max(wake, trainRel - 0.5))
+          : roundQuarter(Math.max(wake + 0.25, trainRel - 0.75));
+      const preTrainHour = ((preTrainRel % 24) + 24) % 24;
+      const trainTimeStr = formatHour(rawTrainHour);
+
+      // Evita que café, almoço ou jantar colidam exatamente com o horário do treino
+      if (Math.abs(toRel(hoursByKey.cafe) - trainRel) < 0.75 || (preTrainRel <= toRel(hoursByKey.cafe) + 0.25 && trainRel <= toRel(hoursByKey.cafe) + 1.25)) {
+        hoursByKey.cafe = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
+      }
+      if (Math.abs(toRel(hoursByKey.almoco) - trainRel) < 0.85) {
+        hoursByKey.almoco = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
+      }
+      if (Math.abs(toRel(hoursByKey.jantar) - trainRel) < 0.85) {
+        hoursByKey.jantar = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
+        hoursByKey.ceia = ((roundQuarter(Math.max(toRel(hoursByKey.jantar) + 1.25, sleep - 0.5)) % 24) + 24) % 24;
+      }
+
+      hoursByKey.pre_treino = preTrainHour;
+
+      const snackIndices = baseSlots
+        .map((s, idx) => (s.category === "lanche" ? idx : -1))
+        .filter((idx) => idx >= 0);
+
+      let convertedSnack = false;
+      if (snackIndices.length > 0) {
+        let bestIdx = snackIndices[0];
+        let bestDiff = Math.abs(toRel(hoursByKey[baseSlots[bestIdx].key]) - preTrainRel);
+        for (const sIdx of snackIndices) {
+          const diff = Math.abs(toRel(hoursByKey[baseSlots[sIdx].key]) - preTrainRel);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestIdx = sIdx;
+          }
+        }
+        if (bestDiff <= 3.25) {
+          baseSlots[bestIdx] = {
+            key: "pre_treino",
+            label: `Lanche Pré-Treino (Treino às ${trainTimeStr})`,
+            category: "pre_treino",
+            share: Math.max(0.12, baseSlots[bestIdx].share),
+            isOptional: false
+          };
+          convertedSnack = true;
+        }
+      }
+
+      if (!convertedSnack) {
+        const preShare = 0.12;
+        baseSlots.forEach((s) => {
+          if (!s.isOptional) {
+            s.share = Number((s.share * (1 - preShare)).toFixed(4));
+          }
+        });
+        baseSlots.push({
+          key: "pre_treino",
+          label: `Lanche Pré-Treino (Treino às ${trainTimeStr})`,
+          category: "pre_treino",
+          share: preShare,
+          isOptional: false
+        });
+      }
+    }
+
+    const mapped = baseSlots.map((slot) => {
       const customVal = customHours[slot.key];
       const hour = typeof customVal === "number" && !Number.isNaN(customVal)
         ? customVal
@@ -165,12 +242,17 @@ window.DietEngine = (function () {
       return {
         ...slot,
         hour,
+        relHour: toRel(hour),
         timeStr: formatHour(hour),
         atWork,
         rushedMorning: isRushed,
         locationLabel
       };
     });
+
+    const mainSlots = mapped.filter((s) => !s.isOptional).sort((a, b) => a.relHour - b.relHour);
+    const optionalSlots = mapped.filter((s) => s.isOptional);
+    return [...mainSlots, ...optionalSlots];
   }
 
   function calculateTargets(profile) {
@@ -548,6 +630,18 @@ window.DietEngine = (function () {
       );
     }
 
+    if (profile.atividade && profile.atividade !== "sedentario") {
+      const trainHour = Number(profile.hora_treino ?? 18);
+      const trainStr = formatHour(trainHour);
+      const customPre = profile.customMealHours && typeof profile.customMealHours.pre_treino === "number"
+        ? profile.customMealHours.pre_treino
+        : roundQuarter(((trainHour - 0.75) % 24 + 24) % 24);
+      const preStr = formatHour(customPre);
+      list.push(
+        `Lanche Pré-Treino específico (${preStr} para treino às ${trainStr}): refeição programada 45 a 60 minutos antes do treino priorizando carboidratos de fácil digestão + proteína magra e baixo teor de gordura/fibras pesadas para fornecer energia sem desconforto gástrico.`
+      );
+    }
+
     if (profile.habilidade === "basica") {
       list.push(
         "Cozinha Básica: selecionamos apenas preparos rápidos (até 25 min), grelhados simples, airfryer, ovos, sanduíches e shakes, sem receitas longas de pressão ou forno."
@@ -670,12 +764,12 @@ window.DietEngine = (function () {
       const currentOtherProt = baseProtFromFixed + baseProtFromEnergyIngs * energyFactor;
       if (baseProtFromProtIngs > 0 && targetSlotProtein > 0) {
         const desiredFromProt = Math.max(
-          isRenal ? 2.5 : 8,
+          isRenal ? 1.0 : 8,
           targetSlotProtein - currentOtherProt
         );
         const rawProt = desiredFromProt / baseProtFromProtIngs;
         protFactor = isRenal
-          ? Math.min(0.85, Math.max(0.18, rawProt))
+          ? Math.min(0.80, Math.max(0.12, rawProt))
           : Math.min(1.45, Math.max(0.50, rawProt));
       }
 
@@ -900,12 +994,14 @@ window.DietEngine = (function () {
     const poolCafe = capPool(filterByCat("cafe"), 2, 1);
     const poolPrincipal = capPool(filterByCat("principal"), 3, 1);
     const poolLanche = capPool(filterByCat("lanche"), 2, 1);
+    const poolPreTreino = capPool(filterByCat("pre_treino"), 2, 1);
     const poolCeia = capPool(filterByCat("ceia"), 2, 1);
 
     const poolsByCategory = {
       cafe: poolCafe,
       principal: poolPrincipal,
       lanche: poolLanche,
+      pre_treino: poolPreTreino.length > 0 ? poolPreTreino : poolLanche,
       ceia: poolCeia
     };
 
@@ -923,7 +1019,13 @@ window.DietEngine = (function () {
       }
 
       if (!scheduledSlot.atWork) {
-        return { pool: basePool, routineBadge: "" };
+        return {
+          pool: basePool,
+          routineBadge:
+            scheduledSlot.category === "pre_treino"
+              ? "Energia rápida (45–60 min antes do treino)"
+              : ""
+        };
       }
 
       if (scheduledSlot.category === "principal") {
@@ -954,17 +1056,27 @@ window.DietEngine = (function () {
         };
       }
 
-      if (scheduledSlot.category === "lanche" || scheduledSlot.category === "cafe") {
+      if (
+        scheduledSlot.category === "lanche" ||
+        scheduledSlot.category === "cafe" ||
+        scheduledSlot.category === "pre_treino"
+      ) {
         if (armazenamentoTrabalho === "mochila_sem_geladeira") {
           const portable = basePool.filter((r) => r.portableRoomTemp);
           return {
             pool: portable.length > 0 ? portable : basePool,
-            routineBadge: "No trabalho: leva na mochila"
+            routineBadge:
+              scheduledSlot.category === "pre_treino"
+                ? "Pré-treino portátil (sem geladeira)"
+                : "No trabalho: leva na mochila"
           };
         }
         return {
           pool: basePool,
-          routineBadge: "No trabalho: lanche prático"
+          routineBadge:
+            scheduledSlot.category === "pre_treino"
+              ? "No trabalho: pré-treino prático"
+              : "No trabalho: lanche prático"
         };
       }
 
@@ -1001,6 +1113,7 @@ window.DietEngine = (function () {
 
     let cafeCursor = 0;
     let lancheCursor = 0;
+    let preTreinoCursor = 0;
     let ceiaCursor = 0;
 
     const days = DAYS_OF_WEEK.map((dayName, dayIndex) => {
@@ -1031,6 +1144,10 @@ window.DietEngine = (function () {
           pickIndex = cafeCursor;
           wheyIdx = cafeCursor;
           cafeCursor += 1;
+        } else if (slot.category === "pre_treino") {
+          pickIndex = preTreinoCursor;
+          wheyIdx = preTreinoCursor;
+          preTreinoCursor += 1;
         } else if (slot.category === "ceia") {
           pickIndex = ceiaCursor;
           wheyIdx = ceiaCursor;

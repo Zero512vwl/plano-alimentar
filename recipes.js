@@ -1001,5 +1001,112 @@ window.RECIPE_BANK = [
       "Cozinhe ou mexa os 2 ovos com orégano e um fio de azeite e sirva com tomate picado."
     ],
     notes: "Ceia salgada quase zero carboidrato para quem sente fome de madrugada."
+  },
+
+  // ==================== LANCHES PRÉ-TREINO ESPECÍFICOS (FÁCIL DIGESTÃO / ENERGIA E RENDIMENTO) ====================
+  {
+    id: "pre-banana-aveia-canela",
+    name: "Banana amassada com aveia fina e canela (Pré-Treino de digestão rápida)",
+    category: "pre_treino",
+    tags: [],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Preparo na hora ou fácil de levar na bolsa.",
+    ingredients: [
+      { name: "Banana prata", sector: "Hortifrúti", grams: 110, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 a 2 unidades", role: "fruit" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 30, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Amasse a banana com a aveia fina e canela de 45 a 60 minutos antes do treino e beba 300 ml de água."
+    ],
+    notes: "Pré-treino clássico: fornece glicose rápida e sustentada com pouquíssima gordura para não pesar no estômago durante o treino."
+  },
+  {
+    id: "pre-tapioca-frango-leve",
+    name: "Tapioca leve de frango desfiado sem gordura (Pré-Treino sólido)",
+    category: "pre_treino",
+    tags: ["frango"],
+    freezable: false,
+    prepTime: "7 min",
+    thawNote: "Usa o frango desfiado do lote.",
+    ingredients: [
+      { name: "Goma de tapioca hidratada", sector: "Mercearia & Grãos", grams: 65, kcal100: 240, p100: 0.2, c100: 59.6, g100: 0, fib100: 0.5, scalable: true, isBatch: false, role: "core" },
+      { name: "Frango desfiado cozido (base lote)", sector: "Açougue & Peixaria", grams: 55, kcal100: 163, p100: 31.0, c100: 0, g100: 3.6, fib100: 0, scalable: true, isBatch: true, rawFactor: 1.35, role: "core" }
+    ],
+    steps: [
+      "Prepare o disco de tapioca na frigideira seca, recheie com o frango desfiado magro e consuma cerca de 50 a 60 minutos antes do treino."
+    ],
+    notes: "Sem glúten, sem lactose e de esvaziamento gástrico rápido (sem queijos gordos para facilitar o treino)."
+  },
+  {
+    id: "pre-torrada-ovo-fruta",
+    name: "Pão integral tostado com ovo mexido leve e banana (Pré-Treino)",
+    category: "pre_treino",
+    tags: ["gluten", "ovo"],
+    freezable: false,
+    prepTime: "6 min",
+    thawNote: "Preparo na hora.",
+    ingredients: [
+      { name: "Pão de forma integral", sector: "Mercearia & Grãos", grams: 50, kcal100: 253, p100: 9.4, c100: 49.9, g100: 3.7, fib100: 6.9, scalable: true, isBatch: false, unitHint: "2 fatias", role: "core" },
+      { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 50, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 80, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" }
+    ],
+    steps: [
+      "Toste o pão integral, acompanhe com o ovo mexido feito em frigideira antiaderente e a fruta."
+    ],
+    notes: "Equilíbrio ideal entre carboidrato complexo e proteína leve para treinos de força ou aeróbico."
+  },
+  {
+    id: "pre-cuscuz-ovo-leve",
+    name: "Cuscuz de milho com ovo cozido (Pré-Treino de energia constante)",
+    category: "pre_treino",
+    tags: ["ovo"],
+    freezable: false,
+    prepTime: "10 min",
+    thawNote: "Preparo rápido na cuscuzeira.",
+    ingredients: [
+      { name: "Cuscuz de milho cozido (flocão)", sector: "Mercearia & Grãos", grams: 120, kcal100: 113, p100: 2.2, c100: 25.3, g100: 0.7, fib100: 2.1, scalable: true, isBatch: false, rawFactor: 0.50, role: "core" },
+      { name: "Ovo de galinha inteiro", sector: "Laticínios & Ovos", grams: 50, kcal100: 143, p100: 13.0, c100: 1.6, g100: 8.9, fib100: 0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "core" }
+    ],
+    steps: [
+      "Consuma o cuscuz de milho cozido no vapor com o ovo cerca de 60 minutos antes de treinar."
+    ],
+    notes: "Excelente fonte de glicogênio muscular, sem glúten e sem lactose."
+  },
+  {
+    id: "pre-shake-whey-banana",
+    name: "Shake Pré-Treino de Whey Protein com banana e aveia",
+    category: "pre_treino",
+    tags: ["whey"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Pronto na hora (ideal 30 a 45 min antes do treino).",
+    ingredients: [
+      { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, unitHint: "1 unidade", role: "fruit" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 20, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Bata o Whey Protein em 200 ml de água gelada com a banana e a aveia (ou tome o Whey na coqueteleira e coma a banana com aveia)."
+    ],
+    notes: "Digestão líquida ultra-rápida: evita qualquer desconforto abdominal mesmo quando consumido 30 minutos antes do treino."
+  },
+  {
+    id: "pre-iogurte-banana-aveia",
+    name: "Iogurte desnatado com banana e aveia (Pré-Treino leve)",
+    category: "pre_treino",
+    tags: ["lactose"],
+    freezable: false,
+    prepTime: "3 min",
+    thawNote: "Montagem rápida na hora.",
+    ingredients: [
+      { name: "Iogurte natural desnatado (0% gordura)", sector: "Laticínios & Ovos", grams: 170, kcal100: 41, p100: 3.8, c100: 5.8, g100: 0.3, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
+      { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 25, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Misture o iogurte desnatado com a aveia e a banana em rodelas 45 minutos antes do treino."
+    ],
+    notes: "Baixíssimo teor de gordura (0,3%) para digestão rápida antes do exercício."
   }
 ];

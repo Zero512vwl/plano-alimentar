@@ -448,14 +448,18 @@ h3 {
 
 .time-sliders-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-sm);
   margin-bottom: var(--space-sm);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 920px) {
   .time-sliders-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .time-sliders-grid > .slider-field:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -472,6 +476,7 @@ h3 {
   padding: var(--space-xs) var(--space-sm);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: var(--space-xs);
 }
 
