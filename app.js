@@ -179,31 +179,39 @@
 
   function renderMetrics(plan) {
     const { targets, weeklyAvg } = plan;
+    const clampRatio = (val, target) =>
+      target > 0 ? Math.min(1, Math.max(0.08, Number((val / target).toFixed(2)))) : 1;
+
     const items = [
       {
         label: "Calorias por dia",
         value: `${weeklyAvg.kcal} kcal`,
-        sub: `Meta calculada: ${targets.kcal} kcal (GET ${targets.get} kcal)`
+        sub: `Meta calculada: ${targets.kcal} kcal (GET ${targets.get} kcal)`,
+        ratio: clampRatio(weeklyAvg.kcal, targets.kcal)
       },
       {
         label: "Proteínas",
         value: `${weeklyAvg.protein} g`,
-        sub: `Meta diária: ${targets.protein} g`
+        sub: `Meta diária: ${targets.protein} g`,
+        ratio: clampRatio(weeklyAvg.protein, targets.protein)
       },
       {
         label: "Carboidratos",
         value: `${weeklyAvg.carbs} g`,
-        sub: `Meta diária: ${targets.carbs} g`
+        sub: `Meta diária: ${targets.carbs} g`,
+        ratio: clampRatio(weeklyAvg.carbs, targets.carbs)
       },
       {
         label: "Gorduras",
         value: `${weeklyAvg.fat} g`,
-        sub: `Meta diária: ${targets.fat} g`
+        sub: `Meta diária: ${targets.fat} g`,
+        ratio: clampRatio(weeklyAvg.fat, targets.fat)
       },
       {
         label: "Fibras",
         value: `${weeklyAvg.fiber} g`,
-        sub: `Meta mínima: ${targets.fiber} g`
+        sub: `Meta mínima: ${targets.fiber} g`,
+        ratio: clampRatio(weeklyAvg.fiber, targets.fiber)
       }
     ];
 
@@ -213,6 +221,9 @@
       <div class="metric-box">
         <span class="metric-label">${escapeHtml(m.label)}</span>
         <span class="metric-value">${escapeHtml(m.value)}</span>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" style="--progress: ${m.ratio};"></div>
+        </div>
         <span class="metric-sub">${escapeHtml(m.sub)}</span>
       </div>
     `
@@ -348,8 +359,14 @@
 
   function updateShoppingProgress() {
     const allCheckboxes = document.querySelectorAll('#shopping-container input[type="checkbox"]');
+    const total = allCheckboxes.length;
     const checkedCount = Array.from(allCheckboxes).filter((c) => c.checked).length;
-    document.getElementById("shopping-progress").textContent = `${checkedCount} de ${allCheckboxes.length} marcados`;
+    document.getElementById("shopping-progress").textContent = `${checkedCount} de ${total} marcados`;
+    const bar = document.getElementById("shopping-progress-bar");
+    if (bar) {
+      const ratio = total > 0 ? Number((checkedCount / total).toFixed(3)) : 0;
+      bar.style.setProperty("--progress", String(ratio));
+    }
   }
 
   function renderShoppingGroup(title, subtitle, sectors) {
