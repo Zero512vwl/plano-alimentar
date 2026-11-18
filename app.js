@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v11";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v13";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -80,6 +80,7 @@
   let checkedItems = loadCheckedItems();
   let selectedDislikes = new Set();
   let foodSearchQuery = "";
+  let customMealHours = {};
 
   function normalizeSearch(str) {
     return String(str || "")
@@ -164,6 +165,11 @@
     if (form.armazenamento_trabalho) {
       form.armazenamento_trabalho.value = profile.armazenamento_trabalho || "geladeira_micro";
     }
+    if (form.hora_acorda) form.hora_acorda.value = String(profile.hora_acorda ?? 6);
+    if (form.trabalho_inicio) form.trabalho_inicio.value = String(profile.trabalho_inicio ?? 7);
+    if (form.trabalho_fim) form.trabalho_fim.value = String(profile.trabalho_fim ?? 17);
+    if (form.hora_dorme) form.hora_dorme.value = String(profile.hora_dorme ?? 22.5);
+    customMealHours = profile.customMealHours ? { ...profile.customMealHours } : {};
     form.aversoes.value = profile.aversoes || "";
 
     const restSet = new Set(profile.restricoes || []);
@@ -178,6 +184,7 @@
 
     selectedDislikes = new Set(profile.aversoesSelecionadas || []);
     renderDislikesPicker();
+    updateSchedulePreview();
   }
 
   function readProfileFromForm() {
@@ -206,6 +213,11 @@
       armazenamento_trabalho: form.armazenamento_trabalho
         ? form.armazenamento_trabalho.value
         : "geladeira_micro",
+      hora_acorda: form.hora_acorda ? Number(form.hora_acorda.value) : 6,
+      trabalho_inicio: form.trabalho_inicio ? Number(form.trabalho_inicio.value) : 7,
+      trabalho_fim: form.trabalho_fim ? Number(form.trabalho_fim.value) : 17,
+      hora_dorme: form.hora_dorme ? Number(form.hora_dorme.value) : 22.5,
+      customMealHours: { ...customMealHours },
       restricoes,
       doencas,
       aversoesSelecionadas: Array.from(selectedDislikes),
@@ -718,6 +730,57 @@
     });
   }
 
+  function updateSchedulePreview() {
+    if (!window.DietEngine || !window.DietEngine.formatHour) return;
+    const fmt = window.DietEngine.formatHour;
+    const parseTime = window.DietEngine.parseTimeStr;
+    const profile = readProfileFromForm();
+
+    const tAcorda = document.getElementById("time_hora_acorda");
+    const tInicio = document.getElementById("time_trabalho_inicio");
+    const tFim = document.getElementById("time_trabalho_fim");
+    const tDorme = document.getElementById("time_hora_dorme");
+
+    if (tAcorda && document.activeElement !== tAcorda) tAcorda.value = fmt(profile.hora_acorda);
+    if (tInicio && document.activeElement !== tInicio) tInicio.value = fmt(profile.trabalho_inicio);
+    if (tFim && document.activeElement !== tFim) tFim.value = fmt(profile.trabalho_fim);
+    if (tDorme && document.activeElement !== tDorme) tDorme.value = fmt(profile.hora_dorme);
+
+    const isFora = profile.rotina_trabalho === "fora_dia_todo";
+    const wrapInicio = document.getElementById("wrap_trabalho_inicio");
+    const wrapFim = document.getElementById("wrap_trabalho_fim");
+    if (wrapInicio) wrapInicio.classList.toggle("is-dimmed", !isFora);
+    if (wrapFim) wrapFim.classList.toggle("is-dimmed", !isFora);
+
+    const strip = document.getElementById("schedule-preview-strip");
+    if (strip && window.DietEngine.computeDailySchedule) {
+      const slots = window.DietEngine.computeDailySchedule(profile, true);
+      const pillsHtml = slots
+        .map((s) => {
+          const shortName = s.label.split("(")[0].trim();
+          const cls = s.atWork ? "schedule-pill is-work" : "schedule-pill";
+          return `
+            <label class="${cls}">
+              <input type="time" class="meal-time-input" data-slot-key="${escapeHtml(s.key)}" value="${escapeHtml(s.timeStr)}" aria-label="Horário de ${escapeHtml(shortName)}">
+              <span>${escapeHtml(shortName)} (${escapeHtml(s.locationLabel)})</span>
+            </label>
+          `;
+        })
+        .join("");
+      strip.innerHTML = `<span class="schedule-strip-title">Horários das refeições (você também pode clicar e editar cada horário):</span> ${pillsHtml}`;
+
+      strip.querySelectorAll(".meal-time-input").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const parsed = parseTime ? parseTime(inp.value) : null;
+          if (parsed !== null) {
+            customMealHours[inp.dataset.slotKey] = parsed;
+            updateSchedulePreview();
+          }
+        });
+      });
+    }
+  }
+
   function setupTabs() {
     const tabBtns = document.querySelectorAll("[data-tab]");
     const tabPanels = document.querySelectorAll(".tab-panel");
@@ -761,6 +824,54 @@
       selectedDislikes.clear();
       renderDislikesPicker();
     });
+
+    const sliderPairs = [
+      { rangeId: "hora_acorda", timeId: "time_hora_acorda" },
+      { rangeId: "trabalho_inicio", timeId: "time_trabalho_inicio" },
+      { rangeId: "trabalho_fim", timeId: "time_trabalho_fim" },
+      { rangeId: "hora_dorme", timeId: "time_hora_dorme" }
+    ];
+
+    sliderPairs.forEach(({ rangeId, timeId }) => {
+      const rangeEl = document.getElementById(rangeId);
+      const timeEl = document.getElementById(timeId);
+      if (rangeEl) {
+        rangeEl.addEventListener("input", () => {
+          customMealHours = {};
+          if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
+            if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
+          }
+          updateSchedulePreview();
+        });
+      }
+      if (timeEl && rangeEl) {
+        timeEl.addEventListener("input", () => {
+          const parsed = window.DietEngine.parseTimeStr
+            ? window.DietEngine.parseTimeStr(timeEl.value)
+            : null;
+          if (parsed !== null) {
+            rangeEl.value = String(parsed);
+            customMealHours = {};
+            if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
+              if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
+            }
+            updateSchedulePreview();
+          }
+        });
+      }
+    });
+
+    ["rotina_trabalho", "refeicoes"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", () => {
+          customMealHours = {};
+          updateSchedulePreview();
+        });
+      }
+    });
+
+    updateSchedulePreview();
   }
 
   form.addEventListener("submit", (e) => {

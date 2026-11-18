@@ -17,8 +17,8 @@
     })();
   </script>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="manifest" href="./manifest.json?v=11">
-  <link rel="stylesheet" href="./styles.css?v=11">
+  <link rel="manifest" href="./manifest.json?v=13">
+  <link rel="stylesheet" href="./styles.css?v=13">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
@@ -152,6 +152,48 @@
                   <option value="mochila_sem_geladeira">Sem geladeira (leva na mochila)</option>
                 </select>
               </div>
+            </div>
+
+            <div class="schedule-adjuster">
+              <div class="schedule-header-row">
+                <p class="field-hint sub-group-hint">Defina seus horários livremente (arraste as barras ou digite qualquer horário exato das 00:00 às 23:59):</p>
+              </div>
+
+              <div class="time-sliders-grid">
+                <div class="slider-field">
+                  <div class="slider-label-row">
+                    <label for="hora_acorda">Acorda às</label>
+                    <input type="time" id="time_hora_acorda" class="slider-time-input" value="06:00" aria-label="Horário exato que acorda">
+                  </div>
+                  <input type="range" id="hora_acorda" name="hora_acorda" min="0" max="23.75" step="0.25" value="6">
+                </div>
+
+                <div class="slider-field" id="wrap_trabalho_inicio">
+                  <div class="slider-label-row">
+                    <label for="trabalho_inicio">Início do trabalho</label>
+                    <input type="time" id="time_trabalho_inicio" class="slider-time-input" value="07:00" aria-label="Horário exato de início do trabalho">
+                  </div>
+                  <input type="range" id="trabalho_inicio" name="trabalho_inicio" min="0" max="23.75" step="0.25" value="7">
+                </div>
+
+                <div class="slider-field" id="wrap_trabalho_fim">
+                  <div class="slider-label-row">
+                    <label for="trabalho_fim">Saída do trabalho</label>
+                    <input type="time" id="time_trabalho_fim" class="slider-time-input" value="17:00" aria-label="Horário exato de saída do trabalho">
+                  </div>
+                  <input type="range" id="trabalho_fim" name="trabalho_fim" min="0" max="23.75" step="0.25" value="17">
+                </div>
+
+                <div class="slider-field">
+                  <div class="slider-label-row">
+                    <label for="hora_dorme">Dorme às</label>
+                    <input type="time" id="time_hora_dorme" class="slider-time-input" value="22:30" aria-label="Horário exato que dorme">
+                  </div>
+                  <input type="range" id="hora_dorme" name="hora_dorme" min="0" max="23.75" step="0.25" value="22.5">
+                </div>
+              </div>
+
+              <div id="schedule-preview-strip" class="schedule-preview-strip" aria-live="polite"></div>
             </div>
           </fieldset>
 
@@ -344,8 +386,8 @@
     </div>
   </footer>
 
-  <script src="./recipes.js?v=11"></script>
-  <script src="./engine.js?v=11"></script>
-  <script src="./app.js?v=11"></script>
+  <script src="./recipes.js?v=13"></script>
+  <script src="./engine.js?v=13"></script>
+  <script src="./app.js?v=13"></script>
 </body>
 </html>

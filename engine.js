@@ -73,6 +73,94 @@ window.DietEngine = (function () {
     return match ? Number(match[1]) : 20;
   }
 
+  function roundQuarter(h) {
+    return Math.round(h * 4) / 4;
+  }
+
+  function formatHour(h) {
+    const norm = ((Number(h) % 24) + 24) % 24;
+    const totalMinutes = Math.round(norm * 60) % 1440;
+    const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const mm = String(totalMinutes % 60).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  function parseTimeStr(str) {
+    if (!str || typeof str !== "string" || !str.includes(":")) return null;
+    const parts = str.split(":");
+    const hh = Number(parts[0]);
+    const mm = Number(parts[1]);
+    if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+    return hh + mm / 60;
+  }
+
+  function computeDailySchedule(profile, isWorkday) {
+    const wake = Number(profile.hora_acorda ?? 6);
+    const rawSleep = Number(profile.hora_dorme ?? 22.5);
+    const sleep = rawSleep <= wake ? rawSleep + 24 : rawSleep;
+    const wStart = Number(profile.trabalho_inicio ?? 7);
+    const wEnd = Number(profile.trabalho_fim ?? 17);
+    const worksOutside = Boolean(isWorkday && profile.rotina_trabalho === "fora_dia_todo");
+
+    const rushedMorning = worksOutside && wStart >= wake && wStart <= wake + 1.0;
+    const cafeHour = rushedMorning
+      ? roundQuarter(Math.min(wake + 0.25, Math.max(wake, wStart - 0.5)))
+      : roundQuarter(wake + 0.5);
+
+    const almocoHour = worksOutside && wStart <= 14
+      ? roundQuarter(Math.min(14.5, Math.max(10.5, 11.5 + (wStart - 6) * 0.5)))
+      : roundQuarter(Math.min(14.5, Math.max(11.5, cafeHour + 5.5)));
+
+    let jantarHour = roundQuarter(Math.min(sleep - 2.0, Math.max(18.0, almocoHour + 7.5)));
+    if (worksOutside && wEnd >= jantarHour - 0.5 && wEnd <= sleep - 1.5 && wStart < wEnd) {
+      jantarHour = roundQuarter(Math.min(sleep - 1.25, wEnd + 0.5));
+    }
+
+    const lanche1Hour = roundQuarter((cafeHour + almocoHour) / 2);
+    const lancheTardeHour = roundQuarter((almocoHour + jantarHour) / 2);
+    const ceiaHour = roundQuarter(Math.max(jantarHour + 1.5, sleep - 0.75));
+
+    const isAtWork = (hour) => {
+      if (!worksOutside) return false;
+      const normH = ((hour % 24) + 24) % 24;
+      if (wStart <= wEnd) {
+        return normH >= wStart && normH <= wEnd - 0.15;
+      }
+      // Turno noturno que atravessa a meia-noite (ex.: 22:00 às 06:00)
+      return normH >= wStart || normH <= wEnd - 0.15;
+    };
+
+    const hoursByKey = {
+      cafe: cafeHour,
+      lanche1: lanche1Hour,
+      almoco: almocoHour,
+      lanche: lancheTardeHour,
+      lanche2: lancheTardeHour,
+      jantar: jantarHour,
+      ceia: ceiaHour
+    };
+
+    const customHours = profile.customMealHours || {};
+    const baseSlots = getSlotTemplate(Number(profile.refeicoes) || 4);
+    return baseSlots.map((slot) => {
+      const customVal = customHours[slot.key];
+      const hour = typeof customVal === "number" && !Number.isNaN(customVal)
+        ? customVal
+        : (hoursByKey[slot.key] ?? 12);
+      const atWork = isAtWork(hour);
+      const isRushed = slot.key === "cafe" && rushedMorning && typeof customVal !== "number";
+      const locationLabel = atWork ? "No trabalho" : "Em casa";
+      return {
+        ...slot,
+        hour,
+        timeStr: formatHour(hour),
+        atWork,
+        rushedMorning: isRushed,
+        locationLabel
+      };
+    });
+  }
+
   function calculateTargets(profile) {
     const peso = Number(profile.peso);
     const altura = Number(profile.altura);
@@ -323,6 +411,20 @@ window.DietEngine = (function () {
   function buildAppliedGuidelines(profile) {
     const list = [];
     const doencas = profile.doencas || [];
+    const wakeStr = formatHour(profile.hora_acorda ?? 6);
+    const sleepStr = formatHour(profile.hora_dorme ?? 22.5);
+    const wStartStr = formatHour(profile.trabalho_inicio ?? 7);
+    const wEndStr = formatHour(profile.trabalho_fim ?? 17);
+
+    if (profile.rotina_trabalho === "fora_dia_todo") {
+      list.push(
+        `Horários ajustados ao seu turno (${wStartStr} às ${wEndStr}, acordando às ${wakeStr} e dormindo às ${sleepStr}): as refeições de segunda a sexta que caem dentro do expediente foram marcadas como "No trabalho" e adaptadas ao seu armazenamento.`
+      );
+    } else {
+      list.push(
+        `Horários do dia ajustados (acordando às ${wakeStr} e dormindo às ${sleepStr}): horários sugeridos distribuídos a cada 3 a 4 horas para manter saciedade estável.`
+      );
+    }
 
     if (profile.habilidade === "basica") {
       list.push(
@@ -636,12 +738,20 @@ window.DietEngine = (function () {
       return scaleRecipe(recipe, factor);
     }
 
-    function getWorkdayPoolForSlot(basePool, slotKey, isWorkday) {
-      if (!isWorkday || rotinaTrabalho !== "fora_dia_todo") {
+    function getWorkdayPoolForSlot(basePool, scheduledSlot) {
+      if (scheduledSlot.rushedMorning) {
+        const fastBreakfast = basePool.filter((r) => r.prepMinutes <= 8);
+        return {
+          pool: fastBreakfast.length > 0 ? fastBreakfast : basePool,
+          routineBadge: "Rápido antes do turno (até 8 min)"
+        };
+      }
+
+      if (!scheduledSlot.atWork) {
         return { pool: basePool, routineBadge: "" };
       }
 
-      if (slotKey === "almoco") {
+      if (scheduledSlot.category === "principal") {
         if (armazenamentoTrabalho === "mochila_sem_geladeira") {
           const roomTemp = basePool.filter((r) => r.portableRoomTemp || !r.badForWorkMarmita);
           const sorted = [
@@ -650,7 +760,7 @@ window.DietEngine = (function () {
           ];
           return {
             pool: sorted.length > 0 ? sorted : basePool,
-            routineBadge: "Prático para levar sem geladeira"
+            routineBadge: "No trabalho: sem geladeira"
           };
         }
         if (armazenamentoTrabalho === "so_geladeira") {
@@ -659,28 +769,27 @@ window.DietEngine = (function () {
           const combined = [...noReheat, ...others];
           return {
             pool: combined.length > 0 ? combined : basePool,
-            routineBadge: "Não precisa de micro-ondas"
+            routineBadge: "No trabalho: sem micro-ondas"
           };
         }
-        // Tem geladeira e micro-ondas: evita peixe e sopa líquida no escritório
         const marmitaGood = basePool.filter((r) => !r.badForWorkMarmita);
         return {
           pool: marmitaGood.length > 0 ? marmitaGood : basePool,
-          routineBadge: "Ideal para marmita no trabalho"
+          routineBadge: "No trabalho: marmita prática"
         };
       }
 
-      if (slotKey === "lanche" || slotKey === "lanche1" || slotKey === "lanche2") {
+      if (scheduledSlot.category === "lanche" || scheduledSlot.category === "cafe") {
         if (armazenamentoTrabalho === "mochila_sem_geladeira") {
           const portable = basePool.filter((r) => r.portableRoomTemp);
           return {
             pool: portable.length > 0 ? portable : basePool,
-            routineBadge: "Leva na mochila (sem geladeira)"
+            routineBadge: "No trabalho: leva na mochila"
           };
         }
         return {
           pool: basePool,
-          routineBadge: "Prático para levar ao trabalho"
+          routineBadge: "No trabalho: lanche prático"
         };
       }
 
@@ -721,6 +830,7 @@ window.DietEngine = (function () {
 
     const days = DAYS_OF_WEEK.map((dayName, dayIndex) => {
       const isWorkday = dayIndex < 5; // Segunda a Sexta
+      const daySlots = computeDailySchedule(profile, isWorkday);
       const solidPrincipals = poolPrincipal.filter((r) => !(r.tags || []).includes("whey"));
       const mainCount = Math.max(1, solidPrincipals.length);
       const almocoIdx = (dayIndex * 2) % mainCount;
@@ -729,9 +839,9 @@ window.DietEngine = (function () {
         jantarIdx = (almocoIdx + 1) % mainCount;
       }
 
-      const meals = slots.map((slot) => {
+      const meals = daySlots.map((slot) => {
         const basePool = poolsByCategory[slot.category] || [];
-        const { pool, routineBadge } = getWorkdayPoolForSlot(basePool, slot.key, isWorkday);
+        const { pool, routineBadge } = getWorkdayPoolForSlot(basePool, slot);
 
         let pickIndex = 0;
         let wheyIdx = dayIndex;
@@ -762,9 +872,9 @@ window.DietEngine = (function () {
 
         const preferPoolOrder =
           (slot.category === "ceia" && dayIndex % 2 === 0) ||
-          (isWorkday &&
-            rotinaTrabalho === "fora_dia_todo" &&
-            slot.key === "almoco" &&
+          slot.rushedMorning ||
+          (slot.atWork &&
+            slot.category === "principal" &&
             armazenamentoTrabalho !== "geladeira_micro");
 
         const options = buildSlotOptions(
@@ -777,7 +887,10 @@ window.DietEngine = (function () {
 
         return {
           slotKey: slot.key,
-          slotLabel: slot.label,
+          slotLabel: `${slot.timeStr} | ${slot.label} (${slot.locationLabel})`,
+          timeStr: slot.timeStr,
+          locationLabel: slot.locationLabel,
+          atWork: slot.atWork,
           category: slot.category,
           share: slot.share,
           isOptional: Boolean(slot.isOptional),
@@ -866,6 +979,9 @@ window.DietEngine = (function () {
   return {
     generatePlan,
     selectMealOption,
-    swapMealInPlan
+    swapMealInPlan,
+    computeDailySchedule,
+    formatHour,
+    parseTimeStr
   };
 })();
