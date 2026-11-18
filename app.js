@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v10";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v11";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -158,12 +158,22 @@
     form.altura.value = profile.altura || 168;
     form.atividade.value = profile.atividade || "leve";
     form.refeicoes.value = String(profile.refeicoes || 4);
-    form.variacao.value = profile.variacao || "pratica";
+    form.variacao.value = profile.variacao || "variada";
+    if (form.habilidade) form.habilidade.value = profile.habilidade || "intermediaria";
+    if (form.rotina_trabalho) form.rotina_trabalho.value = profile.rotina_trabalho || "casa";
+    if (form.armazenamento_trabalho) {
+      form.armazenamento_trabalho.value = profile.armazenamento_trabalho || "geladeira_micro";
+    }
     form.aversoes.value = profile.aversoes || "";
 
     const restSet = new Set(profile.restricoes || []);
     form.querySelectorAll('input[name="restricoes"]').forEach((cb) => {
       cb.checked = restSet.has(cb.value);
+    });
+
+    const doencasSet = new Set(profile.doencas || []);
+    form.querySelectorAll('input[name="doencas"]').forEach((cb) => {
+      cb.checked = doencasSet.has(cb.value);
     });
 
     selectedDislikes = new Set(profile.aversoesSelecionadas || []);
@@ -176,6 +186,11 @@
       restricoes.push(cb.value);
     });
 
+    const doencas = [];
+    form.querySelectorAll('input[name="doencas"]:checked').forEach((cb) => {
+      doencas.push(cb.value);
+    });
+
     return {
       nome: form.nome.value.trim(),
       objetivo: form.objetivo.value,
@@ -186,7 +201,13 @@
       atividade: form.atividade.value,
       refeicoes: Number(form.refeicoes.value),
       variacao: form.variacao.value,
+      habilidade: form.habilidade ? form.habilidade.value : "intermediaria",
+      rotina_trabalho: form.rotina_trabalho ? form.rotina_trabalho.value : "casa",
+      armazenamento_trabalho: form.armazenamento_trabalho
+        ? form.armazenamento_trabalho.value
+        : "geladeira_micro",
       restricoes,
+      doencas,
       aversoesSelecionadas: Array.from(selectedDislikes),
       aversoes: form.aversoes.value.trim()
     };
@@ -255,6 +276,23 @@
 
     document.getElementById("transparency-note").textContent =
       "Base nutricional TACO/TBCA e USDA. Medidas caseiras convertidas (como fio de azeite, colher de chia e unidades de ovos/frutas) aparecem sinalizadas como estimativa.";
+
+    const banner = document.getElementById("clinical-guidelines-banner");
+    const guidelines = plan.appliedGuidelines || [];
+    if (banner) {
+      if (guidelines.length > 0) {
+        banner.innerHTML = `
+          <strong class="guidelines-title">Adaptações de rotina e diretrizes clínicas aplicadas ao seu plano:</strong>
+          <ul class="guidelines-list">
+            ${guidelines.map((g) => `<li>${escapeHtml(g)}</li>`).join("")}
+          </ul>
+        `;
+        banner.hidden = false;
+      } else {
+        banner.innerHTML = "";
+        banner.hidden = true;
+      }
+    }
   }
 
   function renderDayDetail(day, dayIdx, isPrint) {
@@ -275,6 +313,10 @@
 
         const freezeTag = r.freezable
           ? '<span class="badge-freeze">Congelável em lote</span>'
+          : "";
+
+        const routineTag = m.routineBadge
+          ? `<span class="badge-freeze">${escapeHtml(m.routineBadge)}</span>`
           : "";
 
         const optionalTag = m.isOptional
@@ -339,7 +381,7 @@
             </div>
             ${optionTabsHtml}
             <h3>${escapeHtml(r.name)}</h3>
-            <div class="meal-badges">${freezeTag}${optionalTag}</div>
+            <div class="meal-badges">${freezeTag}${routineTag}${optionalTag}</div>
             <p class="meal-macros"><strong>${r.macros.kcal} kcal</strong> | P ${r.macros.protein}g | C ${r.macros.carbs}g | G ${r.macros.fat}g | Fibras ${r.macros.fiber}g</p>
             <ul class="meal-ingredients">${ingList}</ul>
             ${alternativesHtml}

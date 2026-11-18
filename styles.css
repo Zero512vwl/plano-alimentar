@@ -413,6 +413,39 @@ h3 {
   margin: 0 0 var(--space-sm);
 }
 
+.sub-group-hint {
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-subtle);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.guidelines-banner {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-accent-soft);
+  border: 1px solid var(--accent-text);
+  border-radius: var(--radius-md);
+  font-size: 0.925rem;
+}
+
+.guidelines-title {
+  display: block;
+  color: var(--accent-text);
+  margin-bottom: var(--space-2xs);
+}
+
+.guidelines-list {
+  margin: 0;
+  padding-left: var(--space-md);
+  color: var(--text-primary);
+}
+
+.guidelines-list li {
+  margin-bottom: var(--space-2xs);
+}
+
 .checkbox-grid {
   display: flex;
   flex-wrap: wrap;
