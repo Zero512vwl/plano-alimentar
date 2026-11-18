@@ -4,6 +4,6 @@
   "description": "Gerador de cardápio semanal, receitas calculadas e lista de compras com exportação em PDF.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#faf8f5",
-  "theme_color": "#2f5d50"
+  "background_color": "#0f1520",
+  "theme_color": "#1d4ed8"
 }

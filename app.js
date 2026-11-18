@@ -642,7 +642,7 @@
     }
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute("content", validMode === "dark" ? "#111614" : "#f3f3ef");
+      metaTheme.setAttribute("content", validMode === "dark" ? "#0f1520" : "#f2f5f9");
     }
     try {
       localStorage.setItem(STORAGE_THEME_KEY, validMode);
