@@ -150,7 +150,7 @@ window.RECIPE_BANK = [
     ingredients: [
       { name: "Bebida de soja sem açúcar (ou leite vegetal)", sector: "Mercearia & Grãos", grams: 220, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
-      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" },
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 14.0, g100: 48.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" }
     ],
     steps: [
@@ -231,7 +231,7 @@ window.RECIPE_BANK = [
       { name: "Bebida de soja sem açúcar (ou leite vegetal)", sector: "Mercearia & Grãos", grams: 250, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 35, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 90, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
-      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 14.0, g100: 48.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
     ],
     steps: [
       "Bata todos os ingredientes no liquidificador com pedras de gelo até ficar bem cremoso."
@@ -668,7 +668,7 @@ window.RECIPE_BANK = [
     thawNote: "Pronto na hora.",
     ingredients: [
       { name: "Maçã fuji", sector: "Hortifrúti", grams: 130, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, role: "fruit" },
-      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 14.0, g100: 48.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
     ],
     steps: [
       "Corte a fruta em fatias e sirva com a pasta de amendoim por cima."
@@ -764,7 +764,7 @@ window.RECIPE_BANK = [
       { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 40, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 200, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
-      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 15, kcal100: 588, p100: 25.0, c100: 14.0, g100: 48.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
     ],
     steps: [
       "Cozinhe a aveia com o leite/bebida vegetal por 3 minutos até engrossar e desligue o fogo.",
@@ -785,7 +785,7 @@ window.RECIPE_BANK = [
       { name: "Bebida de soja sem açúcar (ou leite desnatado)", sector: "Mercearia & Grãos", grams: 260, kcal100: 40, p100: 3.3, c100: 2.0, g100: 2.0, fib100: 0.4, scalable: true, isBatch: false, role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 45, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" },
       { name: "Banana prata", sector: "Hortifrúti", grams: 110, kcal100: 98, p100: 1.3, c100: 26.0, g100: 0.1, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
-      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 20.0, g100: 50.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
+      { name: "Pasta de amendoim integral", sector: "Mercearia & Grãos", grams: 20, kcal100: 588, p100: 25.0, c100: 14.0, g100: 48.0, fib100: 6.0, scalable: true, isBatch: false, role: "core" }
     ],
     steps: [
       "Coloque o leite/bebida vegetal, o Whey Protein, a aveia, a fruta e a pasta de amendoim no liquidificador.",
@@ -846,7 +846,7 @@ window.RECIPE_BANK = [
     ingredients: [
       { name: "Whey Protein Concentrado ou Isolado", sector: "Suplementos", grams: 30, kcal100: 400, p100: 80.0, c100: 6.7, g100: 5.0, fib100: 0, scalable: false, isBatch: false, unitHint: "1 scoop padrão (120 kcal)", role: "core" },
       { name: "Iogurte natural integral ou desnatado", sector: "Laticínios & Ovos", grams: 170, kcal100: 60, p100: 4.1, c100: 5.5, g100: 2.2, fib100: 0, scalable: true, isBatch: false, unitHint: "1 pote", role: "core" },
-      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 57.9, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" }
+      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 14.0, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" }
     ],
     steps: [
       "Misture o scoop de Whey Protein e o cacau em pó no iogurte natural até virar uma mousse cremosa.",
@@ -976,7 +976,7 @@ window.RECIPE_BANK = [
     thawNote: "Preparo na hora.",
     ingredients: [
       { name: "Abacate maduro", sector: "Hortifrúti", grams: 100, kcal100: 96, p100: 1.2, c100: 6.0, g100: 8.4, fib100: 6.3, scalable: true, isBatch: false, role: "core" },
-      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 57.9, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" },
+      { name: "Cacau em pó 100%", sector: "Mercearia & Grãos", grams: 10, kcal100: 228, p100: 19.6, c100: 14.0, g100: 13.7, fib100: 33.2, scalable: false, estimated: true, role: "core" },
       { name: "Aveia em flocos", sector: "Mercearia & Grãos", grams: 15, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
     ],
     steps: [
@@ -1108,5 +1108,61 @@ window.RECIPE_BANK = [
       "Misture o iogurte desnatado com a aveia e a banana em rodelas 45 minutos antes do treino."
     ],
     notes: "Baixíssimo teor de gordura (0,3%) para digestão rápida antes do exercício."
+  },
+  {
+    id: "alm-tofu-arroz-chuchu",
+    name: "Tofu firme dourado com ervas, arroz, abobrinha e chuchu refogado",
+    category: "principal",
+    tags: ["vegetariano"],
+    freezable: false,
+    prepTime: "15 min",
+    thawNote: "Preparo rápido na frigideira (arroz pode vir do lote).",
+    ingredients: [
+      { name: "Tofu firme natural", sector: "Laticínios & Ovos", grams: 120, kcal100: 76, p100: 8.1, c100: 1.9, g100: 4.8, fib100: 0.3, scalable: true, isBatch: false, role: "core" },
+      { name: "Arroz branco cozido", sector: "Mercearia & Grãos", grams: 140, kcal100: 128, p100: 2.5, c100: 28.1, g100: 0.2, fib100: 1.6, scalable: true, isBatch: true, rawFactor: 0.40, role: "core" },
+      { name: "Cenoura e chuchu refogados", sector: "Hortifrúti", grams: 120, kcal100: 28, p100: 0.9, c100: 6.1, g100: 0.1, fib100: 2.0, scalable: false, isBatch: false, role: "veg" },
+      { name: "Azeite de oliva", sector: "Temperos / Conferir em Casa", grams: 8, kcal100: 884, p100: 0, c100: 0, g100: 100, fib100: 0, scalable: true, estimated: true, isBatch: false }
+    ],
+    steps: [
+      "Corte o tofu em cubos, tempere com cúrcuma, alho e ervas e doure na frigideira com um fio de azeite.",
+      "Sirva com o arroz aquecido e os legumes refogados."
+    ],
+    notes: "Opção 100% vegetal, sem glúten, sem lactose, sem ovo e com baixo potássio."
+  },
+  {
+    id: "ceia-maca-assada-canela",
+    name: "Maçã cozida ou assada com canela e aveia (Ceia leve sem lactose e sem Whey)",
+    category: "ceia",
+    tags: ["vegetariano"],
+    freezable: false,
+    prepTime: "5 min",
+    thawNote: "Preparo rápido no micro-ondas ou frigideira.",
+    ingredients: [
+      { name: "Maçã fuji", sector: "Hortifrúti", grams: 150, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, unitHint: "1 unidade grande", role: "fruit" },
+      { name: "Aveia em flocos finos", sector: "Mercearia & Grãos", grams: 20, kcal100: 394, p100: 13.9, c100: 66.6, g100: 8.5, fib100: 9.1, scalable: true, isBatch: false, role: "core" }
+    ],
+    steps: [
+      "Pique a maçã sem sementes, polvilhe canela e aqueça por 2 minutos no micro-ondas ou frigideira tampada.",
+      "Finalize com a aveia por cima."
+    ],
+    notes: "Ceia morna, 100% vegetal, sem lactose, sem ovo, suave para refluxo e de baixo potássio."
+  },
+  {
+    id: "pre-tapioca-geleia-fruta",
+    name: "Tapioca leve com geleia sem açúcar e maçã (Pré-Treino vegetal rápido)",
+    category: "pre_treino",
+    tags: ["vegetariano"],
+    freezable: false,
+    prepTime: "5 min",
+    thawNote: "Preparo rápido na frigideira ou fácil de levar embrulhada.",
+    ingredients: [
+      { name: "Goma de tapioca hidratada", sector: "Mercearia & Grãos", grams: 65, kcal100: 240, p100: 0.2, c100: 59.6, g100: 0, fib100: 0.5, scalable: true, isBatch: false, role: "core" },
+      { name: "Geleia de fruta sem açúcar", sector: "Mercearia & Grãos", grams: 20, kcal100: 140, p100: 0.3, c100: 35.0, g100: 0, fib100: 1.0, scalable: true, isBatch: false, role: "core" },
+      { name: "Maçã fuji", sector: "Hortifrúti", grams: 120, kcal100: 56, p100: 0.3, c100: 15.2, g100: 0, fib100: 1.3, scalable: true, isBatch: false, unitHint: "1 unidade média", role: "fruit" }
+    ],
+    steps: [
+      "Prepare o disco de tapioca na frigideira seca, espalhe a geleia sem açúcar, dobre e consuma com a fruta 45 minutos antes do treino."
+    ],
+    notes: "Pré-treino 100% vegetal, sem glúten, sem lactose, sem ovo e de baixíssimo potássio/fósforo."
   }
 ];

@@ -17,8 +17,8 @@
     })();
   </script>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="manifest" href="./manifest.json?v=16">
-  <link rel="stylesheet" href="./styles.css?v=16">
+  <link rel="manifest" href="./manifest.json?v=18">
+  <link rel="stylesheet" href="./styles.css?v=18">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Ir para o conteúdo principal</a>
@@ -53,6 +53,8 @@
       </div>
 
       <form id="anamnese-form" class="anamnese-form" novalidate>
+        <div id="form-error" class="form-error" role="alert" tabindex="-1" hidden></div>
+
         <div id="intake-step-1" class="intake-panel is-active">
           <fieldset class="form-group-card">
             <legend>1. Seus dados e objetivo</legend>
@@ -99,6 +101,12 @@
 
           <fieldset class="form-group-card">
             <legend>2. Rotina de trabalho, cozinha e refeições</legend>
+            <div class="work-toggle-row">
+              <label class="check-pill">
+                <input type="checkbox" id="trabalha_atualmente" name="trabalha_atualmente">
+                <span>Trabalha atualmente (marque para ativar rotina, horários e comida no trabalho)</span>
+              </label>
+            </div>
             <div class="form-grid">
               <div class="field">
                 <label for="atividade">Nível de atividade física</label>
@@ -136,11 +144,11 @@
                 </select>
               </div>
 
-              <div class="field">
+              <div class="field" id="wrap_rotina_trabalho">
                 <label for="rotina_trabalho">Rotina de trabalho</label>
-                <select id="rotina_trabalho" name="rotina_trabalho">
-                  <option value="nao_trabalha">Não trabalha (em casa, estudante ou aposentado)</option>
-                  <option value="casa" selected>Não trabalha fora (Home office / horário flexível)</option>
+                <select id="rotina_trabalho" name="rotina_trabalho" disabled>
+                  <option value="nao_trabalha" selected>Não trabalha (em casa, estudante ou aposentado)</option>
+                  <option value="casa">Não trabalha fora (Home office / horário flexível)</option>
                   <option value="fora_meio_periodo">Trabalha fora meio período</option>
                   <option value="fora_dia_todo">Trabalha fora o dia inteiro</option>
                 </select>
@@ -148,9 +156,9 @@
 
               <div class="field" id="wrap_armazenamento_trabalho">
                 <label for="armazenamento_trabalho">Comida no trabalho</label>
-                <select id="armazenamento_trabalho" name="armazenamento_trabalho">
-                  <option value="em_casa">Não leva comida (faz as refeições em casa)</option>
-                  <option value="geladeira_micro" selected>Tem geladeira e micro-ondas</option>
+                <select id="armazenamento_trabalho" name="armazenamento_trabalho" disabled>
+                  <option value="em_casa" selected>Não leva comida (faz as refeições em casa)</option>
+                  <option value="geladeira_micro">Tem geladeira e micro-ondas</option>
                   <option value="so_geladeira">Só geladeira ou bolsa térmica</option>
                   <option value="mochila_sem_geladeira">Sem geladeira (leva na mochila)</option>
                 </select>
@@ -318,8 +326,6 @@
             <strong>Aviso importante:</strong> este aplicativo organiza um cardápio educativo com base nas tabelas nutricionais TACO/TBCA e USDA. Não substitui consulta médica ou nutricional presencial caso você tenha condições clínicas específicas ou use medicamentos contínuos.
           </div>
 
-          <div id="form-error" class="form-error" role="alert" hidden></div>
-
           <div class="form-nav-row">
             <button type="button" class="btn btn-secondary" id="btn-back-step-1">Voltar para dados</button>
             <button type="submit" class="btn btn-primary btn-large">Gerar meu plano alimentar</button>
@@ -351,11 +357,11 @@
       </section>
 
       <!-- Navegação por abas (ocultada na impressão) -->
-      <nav class="tab-nav no-print" aria-label="Seções do plano alimentar">
-        <button type="button" class="tab-btn is-active" data-tab="tab-cardapio" aria-selected="true">Cardápio da semana</button>
-        <button type="button" class="tab-btn" data-tab="tab-receitas" aria-selected="false">Receitas e preparo</button>
-        <button type="button" class="tab-btn" data-tab="tab-congelados" aria-selected="false">Lotes e freezer</button>
-        <button type="button" class="tab-btn" data-tab="tab-compras" aria-selected="false">Lista de compras</button>
+      <nav class="tab-nav no-print" role="tablist" aria-label="Seções do plano alimentar">
+        <button type="button" class="tab-btn is-active" data-tab="tab-cardapio" role="tab" aria-selected="true">Cardápio da semana</button>
+        <button type="button" class="tab-btn" data-tab="tab-receitas" role="tab" aria-selected="false">Receitas e preparo</button>
+        <button type="button" class="tab-btn" data-tab="tab-congelados" role="tab" aria-selected="false">Lotes e freezer</button>
+        <button type="button" class="tab-btn" data-tab="tab-compras" role="tab" aria-selected="false">Lista de compras</button>
       </nav>
 
       <!-- ABA 1: CARDÁPIO -->
@@ -410,8 +416,8 @@
     </div>
   </footer>
 
-  <script src="./recipes.js?v=16"></script>
-  <script src="./engine.js?v=16"></script>
-  <script src="./app.js?v=16"></script>
+  <script src="./recipes.js?v=18"></script>
+  <script src="./engine.js?v=18"></script>
+  <script src="./app.js?v=18"></script>
 </body>
 </html>

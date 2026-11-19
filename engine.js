@@ -31,6 +31,13 @@ window.DietEngine = (function () {
     { name: "Morango fresco", sector: "Hortifrúti", grams: 120, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" }
   ];
 
+  const FALLBACK_FRUITS_LOW_K = [
+    { name: "Maçã sem casca (baixo potássio)", sector: "Hortifrúti", grams: 130, kcal100: 52, p100: 0.3, c100: 14.0, g100: 0.2, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Pera williams (baixo potássio)", sector: "Hortifrúti", grams: 130, kcal100: 57, p100: 0.4, c100: 15.2, g100: 0.1, fib100: 2.4, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Abacaxi pérola picado (baixo potássio)", sector: "Hortifrúti", grams: 130, kcal100: 50, p100: 0.5, c100: 13.1, g100: 0.1, fib100: 1.4, scalable: true, isBatch: false, role: "fruit" },
+    { name: "Morango fresco (baixo potássio)", sector: "Hortifrúti", grams: 120, kcal100: 30, p100: 0.9, c100: 6.8, g100: 0.3, fib100: 1.7, scalable: true, isBatch: false, role: "fruit" }
+  ];
+
   const FALLBACK_VEGS = [
     { name: "Cenoura e vagem refogadas", sector: "Hortifrúti", grams: 100, kcal100: 38, p100: 1.4, c100: 8.2, g100: 0.2, fib100: 2.8, scalable: false, isBatch: false, role: "veg" },
     { name: "Abobrinha grelhada", sector: "Hortifrúti", grams: 100, kcal100: 19, p100: 1.1, c100: 3.5, g100: 0.2, fib100: 1.4, scalable: false, isBatch: false, role: "veg" },
@@ -46,7 +53,10 @@ window.DietEngine = (function () {
     "lan-whey-fruta-castanha",
     "lan-shake-whey-banana",
     "alm-shake-substituto-whey",
-    "alm-sanduiche-prato-frango"
+    "alm-sanduiche-prato-frango",
+    "pre-banana-aveia-canela",
+    "pre-shake-whey-banana",
+    "pre-tapioca-geleia-fruta"
   ]);
 
   const NO_REHEAT_MAIN_IDS = new Set([
@@ -194,16 +204,18 @@ window.DietEngine = (function () {
       const preTrainHour = ((preTrainRel % 24) + 24) % 24;
       const trainTimeStr = formatHour(rawTrainHour);
 
-      // Evita que café, almoço ou jantar colidam exatamente com o horário do treino
+      // Evita que café, almoço, jantar ou ceia colidam com o horário do treino ou fiquem colados ao pré-treino
       if (Math.abs(toRel(hoursByKey.cafe) - trainRel) < 0.75 || (preTrainRel <= toRel(hoursByKey.cafe) + 0.25 && trainRel <= toRel(hoursByKey.cafe) + 1.25)) {
         hoursByKey.cafe = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
       }
       if (Math.abs(toRel(hoursByKey.almoco) - trainRel) < 0.85) {
         hoursByKey.almoco = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
       }
-      if (Math.abs(toRel(hoursByKey.jantar) - trainRel) < 0.85) {
+      if (Math.abs(toRel(hoursByKey.jantar) - trainRel) < 0.85 || Math.abs(toRel(hoursByKey.jantar) - preTrainRel) < 1.0) {
         hoursByKey.jantar = ((roundQuarter(trainRel + 1.0) % 24) + 24) % 24;
-        hoursByKey.ceia = ((roundQuarter(Math.max(toRel(hoursByKey.jantar) + 1.25, sleep - 0.5)) % 24) + 24) % 24;
+      }
+      if (toRel(hoursByKey.ceia) <= Math.max(toRel(hoursByKey.jantar) + 0.75, trainRel + 1.0)) {
+        hoursByKey.ceia = ((roundQuarter(Math.max(toRel(hoursByKey.jantar) + 1.25, trainRel + 1.25)) % 24) + 24) % 24;
       }
 
       hoursByKey.pre_treino = preTrainHour;
@@ -248,6 +260,16 @@ window.DietEngine = (function () {
           category: "pre_treino",
           share: preShare,
           isOptional: false
+        });
+      }
+
+      // Garante que a soma das frações das refeições principais seja exatamente 1.0000
+      const mainSum = baseSlots.filter((s) => !s.isOptional).reduce((acc, s) => acc + s.share, 0);
+      if (mainSum > 0 && Math.abs(mainSum - 1) > 0.001) {
+        baseSlots.forEach((s) => {
+          if (!s.isOptional) {
+            s.share = Number((s.share / mainSum).toFixed(4));
+          }
         });
       }
     }
@@ -370,7 +392,7 @@ window.DietEngine = (function () {
     return false;
   }
 
-  function adaptAndFilterRecipe(recipe, restrictions, dislikes, doencas, habilidade, renalStage = "nenhuma") {
+  function adaptAndFilterRecipe(recipe, restrictions, dislikes, doencas, habilidade, renalStage = "nenhuma", maxBasicMins = 15) {
     const tags = recipe.tags || [];
     const prepMins = parsePrepMinutes(recipe.prepTime);
     const hasRenal = renalStage !== "nenhuma" || doencas.includes("renal_alerta");
@@ -383,7 +405,7 @@ window.DietEngine = (function () {
       effectiveRenal === "drc_avancada" ||
       effectiveRenal === "drc_dialise";
 
-    if (habilidade === "basica" && prepMins >= 30) {
+    if (habilidade === "basica" && prepMins > maxBasicMins) {
       return null;
     }
 
@@ -447,23 +469,35 @@ window.DietEngine = (function () {
         effectiveRenal !== "nenhuma"
       ) {
         if (ing.name === "Pão francês") {
+          const isLowSodium = doencas.includes("hipertensao") || effectiveRenal !== "nenhuma";
           ing = {
             ...ing,
-            name:
-              doencas.includes("hipertensao") || effectiveRenal !== "nenhuma"
-                ? "Pão de forma com baixo teor de sódio"
-                : "Pão de forma integral (baixo IG)",
+            name: isLowSodium
+              ? "Pão de forma com baixo teor de sódio"
+              : "Pão de forma integral (baixo IG)",
             kcal100: 253,
             p100: 9.4,
             c100: 49.9,
             g100: 3.7,
             fib100: 6.9
           };
-          adaptedName = adaptedName.replace(/Pão francês/gi, "Pão baixo sódio");
+          adaptedName = adaptedName.replace(
+            /Pão francês/gi,
+            isLowSodium ? "Pão baixo sódio" : "Pão integral"
+          );
         }
       }
 
-      if (doencas.includes("diabetes") || doencas.includes("colesterol")) {
+      // Celíacos / Sem glúten: especifica aveia certificada sem glúten (evita contaminação cruzada)
+      if (restrictions.includes("sem_gluten") && /^Aveia em flocos/i.test(ing.name)) {
+        ing = {
+          ...ing,
+          name: "Aveia certificada sem glúten"
+        };
+      }
+
+      // Na DRC avançada ou diálise (restrição de fósforo/potássio), mantém arroz branco para evitar excesso de fósforo do arroz integral
+      if ((doencas.includes("diabetes") || doencas.includes("colesterol")) && !restrictPotassium) {
         if (ing.name === "Arroz branco cozido") {
           ing = {
             ...ing,
@@ -648,12 +682,13 @@ window.DietEngine = (function () {
           ing = {
             ...ing,
             name: "Maçã sem casca ou pera (fruta de baixo potássio)",
+            grams: Math.round(ing.grams * 1.4),
             kcal100: 52,
             p100: 0.3,
             c100: 14.0,
             g100: 0.2,
             fib100: 2.0,
-            unitHint: "1 unidade média"
+            unitHint: "1 unidade grande"
           };
           adaptedName = adaptedName.replace(/banana/gi, "maçã/pera (baixo potássio)");
         } else if (/Mamão/i.test(ing.name)) {
@@ -702,12 +737,19 @@ window.DietEngine = (function () {
         }
       }
 
-      // 6. Diretriz SBEM Hipotireoidismo: evita soja próxima ao horário da levotiroxina
-      if (doencas.includes("hipotireoidismo") && /Bebida de soja/i.test(ing.name)) {
-        ing = {
-          ...ing,
-          name: "Leite desnatado ou bebida vegetal de amêndoas/aveia (sem soja)"
-        };
+      // 6. Diretriz SBEM Hipotireoidismo: evita soja próxima ao horário da levotiroxina (intervalo mínimo 4h)
+      if (doencas.includes("hipotireoidismo")) {
+        if (/Bebida de soja/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: "Leite desnatado ou bebida vegetal de amêndoas/aveia (sem soja)"
+          };
+        } else if (/Tofu/i.test(ing.name)) {
+          ing = {
+            ...ing,
+            name: ing.name + " (consumir com pelo menos 4h de intervalo da levotiroxina)"
+          };
+        }
       }
 
       if (!matchesDislike(ing.name, dislikes)) {
@@ -720,7 +762,8 @@ window.DietEngine = (function () {
         adaptedIngredients.some((i) => i.name === candidateName);
 
       if (ing.role === "fruit") {
-        const replacement = FALLBACK_FRUITS.find(
+        const fruitPool = restrictPotassium ? FALLBACK_FRUITS_LOW_K : FALLBACK_FRUITS;
+        const replacement = fruitPool.find(
           (f) => !matchesDislike(f.name, dislikes) && !alreadyInRecipe(f.name)
         );
         if (replacement) {
@@ -794,9 +837,10 @@ window.DietEngine = (function () {
     };
   }
 
-  function buildAppliedGuidelines(profile, targets) {
-    const list = [];
+  function buildAppliedGuidelines(profile, targets, clinicalWarnings = []) {
+    const list = [...clinicalWarnings];
     const doencas = profile.doencas || [];
+    const restrictions = profile.restricoes || [];
     const renalStage = getRenalStage(profile);
     const wakeStr = formatHour(profile.hora_acorda ?? 6);
     const sleepStr = formatHour(profile.hora_dorme ?? 22.5);
@@ -824,10 +868,9 @@ window.DietEngine = (function () {
     if (profile.atividade && profile.atividade !== "sedentario") {
       const trainHour = Number(profile.hora_treino ?? 18);
       const trainStr = formatHour(trainHour);
-      const customPre = profile.customMealHours && typeof profile.customMealHours.pre_treino === "number"
-        ? profile.customMealHours.pre_treino
-        : roundQuarter(((trainHour - 0.75) % 24 + 24) % 24);
-      const preStr = formatHour(customPre);
+      const workdaySlots = computeDailySchedule(profile, true);
+      const preSlot = workdaySlots.find((s) => s.key === "pre_treino");
+      const preStr = preSlot ? preSlot.timeStr : formatHour(((trainHour - 0.75) % 24 + 24) % 24);
       list.push(
         `Lanche Pré-Treino específico (${preStr} para treino às ${trainStr}): refeição programada 45 a 60 minutos antes do treino priorizando carboidratos de fácil digestão + proteína magra e baixo teor de gordura/fibras pesadas para fornecer energia sem desconforto gástrico.`
       );
@@ -835,7 +878,13 @@ window.DietEngine = (function () {
 
     if (profile.habilidade === "basica") {
       list.push(
-        "Cozinha Básica: selecionamos apenas preparos rápidos (até 25 min), grelhados simples, airfryer, ovos, sanduíches e shakes, sem receitas longas de pressão ou forno."
+        "Cozinha Básica: priorizamos preparos rápidos (até 15 min) com ovos, sanduíches, shakes, tapiocas e grelhados simples, sem receitas longas de pressão ou forno."
+      );
+    }
+
+    if (restrictions.includes("sem_gluten")) {
+      list.push(
+        "Restrição Sem Glúten / Celíacos: receitas com trigo foram excluídas e qualquer receita com aveia exige obrigatoriamente Aveia Certificada Sem Glúten (para evitar contaminação cruzada)."
       );
     }
 
@@ -880,29 +929,29 @@ window.DietEngine = (function () {
     }
     if (doencas.includes("acido_urico")) {
       list.push(
-        "Diretriz Hiperuricemia / Gota (SBR): removidas carnes vermelhas e peixes ricos em purinas, priorizando laticínios desnatados (que possuem efeito uricosúrico comprovado), ovos e proteínas vegetais. Evite álcool/cerveja e bebidas com frutose/refrigerantes, e beba mais de 2,5 L de água/dia."
+        "Diretriz Hiperuricemia / Gota (SBR): removidas carnes vermelhas e peixes ricos em purinas, priorizando laticínios desnatados (efeito uricosúrico comprovado), ovos e proteínas vegetais. Meta sérica de ácido úrico < 6,0 mg/dL; evite álcool/cerveja e bebidas com frutose e beba > 2,5 L de água/dia."
       );
     }
     if (doencas.includes("hipotireoidismo")) {
       list.push(
-        "Diretriz Hipotireoidismo (SBEM): bebidas de soja foram substituídas para não reduzir a absorção da levotiroxina. Tome o hormônio da tireoide em jejum com água pura e aguarde 30 a 60 minutos antes do café da manhã (evite suplementos de ferro ou cálcio no mesmo horário)."
+        "Diretriz Hipotireoidismo (SBEM): bebidas de soja matinais foram substituídas e derivados de soja (como tofu) exigem intervalo mínimo de 4 horas após a levotiroxina. Tome o hormônio da tireoide em jejum com água pura e aguarde 30 a 60 minutos antes do café da manhã (mantenha 4h de distância de suplementos de ferro ou cálcio)."
       );
     }
     if (renalStage === "drc_leve") {
       list.push(
-        `Diretriz Doença Renal Crônica Estágios 1 e 2 — Leve (SBN / KDIGO / KDOQI): proteína controlada sem excessos em 0,8 a 1,0 g/kg/dia (meta de ${targets.protein} g/dia, sem suplementos de Whey Protein) para evitar hiperfiltração glomerular, associada à redução de sódio (< 2.000 mg/dia; pães e queijos trocados por versões sem sal). Atenção: NUNCA consuma carambola (neurotóxica na DRC).`
+        `Diretriz Doença Renal Crônica Estágios 1 e 2 — Leve (SBN / KDIGO 2024 / KDOQI): proteína controlada sem excessos em 0,8 a 1,0 g/kg/dia (meta de ${targets.protein} g/dia, sem suplementos de Whey Protein) para evitar hiperfiltração glomerular, associada à redução de sódio (< 2.000 mg/dia) e corte de ultraprocessados com aditivos de fósforo. Atenção: NUNCA consuma carambola (neurotóxica na DRC).`
       );
     } else if (renalStage === "drc_conservador") {
       list.push(
-        `Diretriz Doença Renal Crônica Estágios 3a e 3b — Tratamento Conservador (SBN / BRASPEN / KDOQI): ingestão proteica estritamente reduzida para 0,6 a 0,8 g/kg/dia (meta de ${targets.protein} g/dia), reduzindo automaticamente as gramas de carnes/ovos e mantendo a energia (25-35 kcal/kg) via carboidratos complexos e azeite. Retirados Whey, queijos com sal e sementes/oleaginosas ricas em fósforo; feijão ajustado para cozimento em 2 águas. NUNCA consuma carambola.`
+        `Diretriz Doença Renal Crônica Estágios 3a e 3b — Tratamento Conservador (SBN / KDIGO 2024 / KDOQI): ingestão proteica controlada em 0,6 a 0,8 g/kg/dia (meta de ${targets.protein} g/dia), mantendo o aporte calórico (25-35 kcal/kg) via carboidratos e azeite para evitar catabolismo. Retirados Whey, queijos salgados e aditivos/sementes ricas em fósforo; feijão cozido em 2 águas. Nota KDIGO 2024: idosos frágeis ou com sarcopenia não devem restringir proteína sem avaliação médica, e cortes de potássio/fósforo devem seguir seus exames de sangue. NUNCA consuma carambola.`
       );
     } else if (renalStage === "drc_avancada") {
       list.push(
-        `Diretriz Doença Renal Crônica Estágios 4 e 5 Pré-Diálise — Avançada (SBN / BRASPEN / KDOQI): dieta hipoproteica estrita de 0,6 g/kg/dia (meta de ${targets.protein} g/dia) com restrição rigorosa de Potássio, Fósforo e Sódio. Frutas ricas em potássio (banana, mamão, abacate) foram automaticamente substituídas por frutas de baixo potássio (maçã, pera, abacaxi), tubérculos/legumes orientados ao cozimento em água abundante com descarte da água (reduz 50% do potássio) e sementes/castanhas/queijos salgados retirados. NUNCA consuma carambola.`
+        `Diretriz Doença Renal Crônica Estágios 4 e 5 Pré-Diálise — Avançada (SBN / KDIGO 2024 / KDOQI): dieta hipoproteica estrita de 0,6 g/kg/dia (meta de ${targets.protein} g/dia) com restrição rigorosa de Potássio, Fósforo e Sódio. Banana, mamão e abacate foram substituídos por frutas de baixo potássio (maçã, pera, abacaxi) e tubérculos/legumes orientados ao cozimento em água abundante com descarte da água (reduz ~50% do potássio). Nota KDIGO 2024: individualize potássio e fósforo pelos exames séricos, evite ultraprocessados com aditivos de fósforo (absorção ~100%) e não restrinja proteína em caso de fragilidade/sarcopenia. NUNCA consuma carambola.`
       );
     } else if (renalStage === "drc_dialise") {
       list.push(
-        `Diretriz Doença Renal Crônica Estágio 5 em Diálise / Hemodiálise (SBN / BRASPEN / KDOQI): dieta hiperproteica de reposição de 1,2 g/kg/dia (meta de ${targets.protein} g/dia, priorizando clara de ovo, frango e carnes magras para repor os aminoácidos perdidos na sessão de diálise), combinada com restrição rigorosa de Potássio (banana, mamão e abacate substituídos por maçã, pera e abacaxi + cozimento de tubérculos com descarte da água), Fósforo (sem sementes, amendoim, castanhas ou queijos amarelos), Sódio e controle de líquidos conforme sua diurese residual. NUNCA consuma carambola.`
+        `Diretriz Doença Renal Crônica Estágio 5 em Diálise / Hemodiálise (SBN / KDIGO 2024 / KDOQI): dieta hiperproteica de reposição de 1,2 g/kg/dia (meta de ${targets.protein} g/dia, priorizando clara de ovo, frango e carnes magras para repor os aminoácidos perdidos na diálise), combinada com controle rigoroso de Potássio (maçã, pera e abacaxi no lugar de banana/mamão/abacate + cozimento de tubérculos com descarte da água), Fósforo (zero aditivos/ultraprocessados, sementes, amendoim ou queijos amarelos), Sódio e líquidos conforme sua diurese residual. NUNCA consuma carambola.`
       );
     }
 
@@ -934,9 +983,43 @@ window.DietEngine = (function () {
     };
   }
 
-  // Escalonamento em 2 eixos e 2 passagens (Proteína + Energia separadamente):
-  // Garante que a proteína total da refeição (somando carnes/ovos + proteína vegetal do arroz/aveia/pão)
-  // bata exatamente a meta proteica da refeição (fundamental na DRC 0,6-0,8 g/kg/dia), enquanto os carboidratos/gorduras fecham as calorias!
+  function computeDynamicUnitHint(ingName, newGrams, origGrams, origHint) {
+    if (/^Ovo de galinha inteiro/i.test(ingName)) {
+      const units = Math.max(1, Math.round(newGrams / 50));
+      return units === 1 ? "1 unidade" : `aprox. ${units} unidades`;
+    }
+    if (/^Clara de ovo/i.test(ingName)) {
+      const units = Math.max(1, Math.round(newGrams / 30));
+      return units === 1 ? "1 clara" : `${units} claras`;
+    }
+    if (/^Pão de forma/i.test(ingName)) {
+      const slices = Math.max(1, Math.round(newGrams / 25));
+      return slices === 1 ? "1 fatia" : `${slices} fatias`;
+    }
+    if (/^Banana/i.test(ingName)) {
+      const units = Math.max(1, Math.round(newGrams / 90));
+      return units === 1 ? "1 unidade média" : `${units} unidades`;
+    }
+    if (/^Maçã|^Pera/i.test(ingName)) {
+      const units = Math.max(1, Math.round(newGrams / 130));
+      return units === 1 ? "1 unidade média" : `${units} unidades`;
+    }
+    if (/^Iogurte natural/i.test(ingName)) {
+      if (Math.abs(newGrams - 170) <= 25) return "1 pote padrão";
+      if (newGrams <= 95) return "aprox. 1/2 pote";
+      if (newGrams <= 145) return "aprox. 3/4 de pote";
+      return undefined;
+    }
+    if (!origHint) return undefined;
+    if (origGrams > 0 && Math.abs(newGrams - origGrams) / origGrams > 0.25) {
+      return undefined;
+    }
+    return origHint;
+  }
+
+  // Escalonamento em 2 eixos + fechamento calórico final (Proteína + Energia separadamente):
+  // Garante que a proteína total da refeição bata a meta (crucial na DRC 0,6-0,8 g/kg/dia e Diálise 1,2 g/kg/dia),
+  // enquanto carboidratos e gorduras saudáveis fecham a meta calórica (sem déficit involuntário na DRC ou Hipertrofia).
   function scaleRecipeForSlot(recipe, targetSlotKcal, targetSlotProtein, isRenal) {
     const isProteinDominant = (ing) =>
       (ing.p100 >= 11 && ing.p100 * 4 >= ing.c100 * 1.4) ||
@@ -976,31 +1059,55 @@ window.DietEngine = (function () {
         );
         const rawProt = desiredFromProt / baseProtFromProtIngs;
         protFactor = isRenal
-          ? Math.min(0.85, Math.max(0.10, rawProt))
-          : Math.min(1.45, Math.max(0.30, rawProt));
+          ? Math.min(0.90, Math.max(0.10, rawProt))
+          : Math.min(1.85, Math.max(0.30, rawProt));
       }
 
       const currentProtAndFixedKcal = baseKcalFromFixed + baseKcalFromProtIngs * protFactor;
       if (baseKcalFromEnergyIngs > 0) {
         const neededEnergyKcal = Math.max(80, targetSlotKcal - currentProtAndFixedKcal);
         const rawEnergy = neededEnergyKcal / baseKcalFromEnergyIngs;
-        energyFactor = Math.min(isRenal ? 2.2 : 2.1, Math.max(0.55, rawEnergy));
+        energyFactor = Math.min(isRenal ? 3.5 : 2.8, Math.max(0.55, rawEnergy));
       }
     }
 
-    const scaledIngredients = recipe.ingredients.map((ing) => {
+    const scaledIngredients = recipe.ingredients.map((rawIng) => {
+      let ing = { ...rawIng };
       let newGrams = ing.grams;
       if (isProteinDominant(ing)) {
         newGrams = roundTo5(ing.grams * protFactor);
+        // Evita frações impraticáveis de ovo inteiro (ex.: 20g = 0,4 ovo): usa clara de ovo (30g = 1 clara) ou 1 ovo inteiro (50g)
+        if (/^Ovo de galinha inteiro$/i.test(ing.name) && newGrams < 45) {
+          if (newGrams <= 35) {
+            ing = {
+              ...ing,
+              name: "Clara de ovo cozida ou mexida",
+              kcal100: 52,
+              p100: 11.0,
+              c100: 0.7,
+              g100: 0.2,
+              fib100: 0
+            };
+            newGrams = 30;
+          } else {
+            newGrams = 50;
+          }
+        }
       } else if (ing.scalable) {
-        const effEnergyFactor =
-          isRenal && ing.p100 >= 8.5 ? Math.min(1.25, energyFactor) : energyFactor;
+        let effEnergyFactor = energyFactor;
+        if (ing.g100 >= 80) {
+          effEnergyFactor = Math.min(1.5, energyFactor);
+        } else if (isRenal && ing.p100 >= 8.5) {
+          effEnergyFactor = Math.min(1.35, energyFactor);
+        }
         newGrams = roundTo5(ing.grams * effEnergyFactor);
       }
+
       const factor = newGrams / 100;
       return {
         ...ing,
         grams: newGrams,
+        unitHint: computeDynamicUnitHint(ing.name, newGrams, rawIng.grams, rawIng.unitHint),
         kcal: Math.round(ing.kcal100 * factor),
         protein: Math.round(ing.p100 * factor),
         carbs: Math.round(ing.c100 * factor),
@@ -1008,7 +1115,49 @@ window.DietEngine = (function () {
       };
     });
 
-    const macros = computeRecipeMacros(scaledIngredients);
+    // Passagem final de fechamento calórico (evita déficit involuntário na DRC ou na Hipertrofia)
+    let macros = computeRecipeMacros(scaledIngredients);
+    let kcalGap = targetSlotKcal - macros.kcal;
+
+    if (kcalGap > 45) {
+      // 1) Se houver azeite de oliva no prato, ajusta até 15g (1,5 colher de sopa) para ajudar energia e gorduras boas
+      const oilIng = scaledIngredients.find((i) => /^Azeite de oliva/i.test(i.name));
+      if (oilIng && oilIng.grams < 15) {
+        const addOil = Math.min(15 - oilIng.grams, roundTo5(kcalGap / 8.84));
+        if (addOil >= 5) {
+          oilIng.grams += addOil;
+          const f = oilIng.grams / 100;
+          oilIng.kcal = Math.round(oilIng.kcal100 * f);
+          oilIng.fat = Math.round(oilIng.g100 * f);
+          macros = computeRecipeMacros(scaledIngredients);
+          kcalGap = targetSlotKcal - macros.kcal;
+        }
+      }
+
+      // 2) Se ainda faltar energia, completa com carboidrato limpo de baixíssima proteína presente no prato (arroz, tapioca, batata, cuscuz, fruta)
+      if (kcalGap > 45) {
+        const cleanCarbs = scaledIngredients.filter(
+          (i) => i.scalable && !isProteinDominant(i) && i.p100 < 4.0 && i.g100 < 30 && i.kcal100 >= 45
+        );
+        if (cleanCarbs.length > 0) {
+          const perCarbGap = kcalGap / cleanCarbs.length;
+          cleanCarbs.forEach((cIng) => {
+            const extraGrams = Math.min(140, Math.max(0, Math.round((perCarbGap / (cIng.kcal100 / 100)) / 5) * 5));
+            if (extraGrams > 0) {
+              cIng.grams += extraGrams;
+              const f = cIng.grams / 100;
+              cIng.kcal = Math.round(cIng.kcal100 * f);
+              cIng.protein = Math.round(cIng.p100 * f);
+              cIng.carbs = Math.round(cIng.c100 * f);
+              cIng.fat = Math.round(cIng.g100 * f);
+              cIng.unitHint = computeDynamicUnitHint(cIng.name, cIng.grams, cIng.grams, cIng.unitHint);
+            }
+          });
+          macros = computeRecipeMacros(scaledIngredients);
+        }
+      }
+    }
+
     return {
       ...recipe,
       ingredients: scaledIngredients,
@@ -1049,6 +1198,35 @@ window.DietEngine = (function () {
       return (grams / 1000).toFixed(2).replace(".", ",") + " kg";
     }
     return Math.round(grams) + " g";
+  }
+
+  function getShoppingName(rawName) {
+    const clean = String(rawName || "").trim();
+    if (/^Azeite de oliva/i.test(clean)) return "Azeite de oliva extravirgem";
+    if (/^Aveia certificada sem glúten/i.test(clean)) return "Aveia certificada sem glúten";
+    if (/^Aveia em flocos/i.test(clean)) return "Aveia em flocos";
+    if (/Peito de frango|Frango desfiado/i.test(clean)) return "Peito de frango (para grelhar / desfiar)";
+    if (/Patinho/i.test(clean)) return "Patinho bovino magro";
+    if (/Filé de tilápia/i.test(clean)) return "Filé de tilápia";
+    if (/Arroz branco/i.test(clean)) return "Arroz branco";
+    if (/Arroz integral/i.test(clean)) return "Arroz integral";
+    if (/Feijão carioca/i.test(clean)) return "Feijão carioca";
+    if (/Feijão preto/i.test(clean)) return "Feijão preto";
+    if (/Batata inglesa/i.test(clean)) return "Batata inglesa";
+    if (/Batata-doce/i.test(clean)) return "Batata-doce";
+    if (/Abóbora cabotiá/i.test(clean)) return "Abóbora cabotiá";
+    if (/Iogurte natural/i.test(clean)) {
+      return /desnatado|0%/i.test(clean) ? "Iogurte natural desnatado" : "Iogurte natural";
+    }
+    if (/Maçã/i.test(clean)) return "Maçã";
+    if (/Banana/i.test(clean)) return "Banana prata";
+    if (/Mamão/i.test(clean)) return "Mamão formosa";
+    if (/Morango/i.test(clean)) return "Morango fresco";
+    if (/Geleia de fruta/i.test(clean)) return "Geleia de fruta sem açúcar";
+    if (/Ricota/i.test(clean)) return "Ricota fresca sem sal";
+    if (/Cuscuz de milho/i.test(clean)) return "Flocão de milho (para cuscuz)";
+    if (/Ovo de galinha|ovo inteiro \+ claras|Clara de ovo/i.test(clean)) return "Ovos de galinha";
+    return clean.replace(/\s*\([^)]*\)/g, "").trim() || clean;
   }
 
   function recomputePlanAggregates(plan) {
@@ -1093,29 +1271,50 @@ window.DietEngine = (function () {
         if (meal.isOptional) return;
         const r = meal.recipe;
         if (!uniqueRecipesMap.has(r.id)) {
-          uniqueRecipesMap.set(r.id, { recipe: r, count: 0 });
+          uniqueRecipesMap.set(r.id, {
+            recipe: r,
+            count: 0,
+            minKcal: r.macros.kcal,
+            maxKcal: r.macros.kcal
+          });
         }
-        uniqueRecipesMap.get(r.id).count += 1;
+        const entry = uniqueRecipesMap.get(r.id);
+        entry.count += 1;
+        if (r.macros.kcal < entry.minKcal) entry.minKcal = r.macros.kcal;
+        if (r.macros.kcal > entry.maxKcal) entry.maxKcal = r.macros.kcal;
 
         r.ingredients.forEach((ing) => {
           const rawFactor = ing.rawFactor || 1;
           const purchaseGrams = ing.grams * rawFactor;
           const targetMap = ing.isBatch ? batchItemsMap : freshItemsMap;
-          const itemKey = `${ing.sector}::${ing.name}`;
+          const shopName = getShoppingName(ing.name);
+          const itemKey = `${ing.sector}::${normalizeText(shopName)}`;
 
           if (!targetMap.has(itemKey)) {
             targetMap.set(itemKey, {
               id: normalizeText(itemKey).replace(/[^a-z0-9]+/g, "-"),
-              name: ing.name,
+              name: shopName,
               sector: ing.sector,
               totalGrams: 0,
               hasRawAdjustment: rawFactor !== 1
             });
+          } else if (rawFactor !== 1) {
+            targetMap.get(itemKey).hasRawAdjustment = true;
           }
           targetMap.get(itemKey).totalGrams += purchaseGrams;
         });
       });
     });
+
+    // Unifica qualquer item que tenha aparecido tanto em Lote quanto em Frescos (zero duplicidade entre as 2 listas)
+    for (const [key, freshItem] of freshItemsMap.entries()) {
+      if (batchItemsMap.has(key)) {
+        const batchItem = batchItemsMap.get(key);
+        batchItem.totalGrams += freshItem.totalGrams;
+        if (freshItem.hasRawAdjustment) batchItem.hasRawAdjustment = true;
+        freshItemsMap.delete(key);
+      }
+    }
 
     const groupBySector = (map) => {
       const sectorsOrder = [
@@ -1179,20 +1378,68 @@ window.DietEngine = (function () {
     const dislikes = Array.from(new Set([...selectedDislikes, ...typedDislikes]));
 
     const bank = window.RECIPE_BANK || [];
+    const clinicalWarnings = [];
+    const buildNeutralSafeFallback = (cat) => {
+      const isLowK = renalStage === "drc_avancada" || renalStage === "drc_dialise";
+      return {
+        id: `safe-fallback-${cat}`,
+        name: "Prato neutro seguro (arroz, legumes cozidos e fruta leve)",
+        category: cat,
+        tags: ["vegetariano"],
+        freezable: false,
+        prepTime: "15 min",
+        prepMinutes: 15,
+        portableRoomTemp: true,
+        noReheatNeeded: true,
+        badForWorkMarmita: false,
+        thawNote: "Preparo simples na hora.",
+        ingredients: [
+          { name: "Arroz branco cozido", sector: "Mercearia & Grãos", grams: 140, kcal100: 128, p100: 2.5, c100: 28.1, g100: 0.2, fib100: 1.6, scalable: true, isBatch: true, rawFactor: 0.40, role: "core" },
+          { name: isLowK ? "Maçã sem casca (baixo potássio)" : "Maçã fuji", sector: "Hortifrúti", grams: 130, kcal100: 52, p100: 0.3, c100: 14.0, g100: 0.2, fib100: 2.0, scalable: true, isBatch: false, role: "fruit" },
+          { name: "Azeite de oliva extravirgem", sector: "Temperos / Conferir em Casa", grams: 8, kcal100: 884, p100: 0, c100: 0, g100: 100, fib100: 0, scalable: true, estimated: true, isBatch: false }
+        ],
+        steps: [
+          "Sirva o arroz cozido temperado com ervas e azeite acompanhado da fruta higienizada."
+        ],
+        notes: "Opção neutra gerada automaticamente para nunca violar suas alergias ou restrições clínicas."
+      };
+    };
+
     const filterByCat = (cat) => {
       const adapted = bank
         .filter((r) => r.category === cat)
-        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes, doencas, habilidade, renalStage))
+        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes, doencas, habilidade, renalStage, 15))
         .filter(Boolean);
 
       if (adapted.length >= 2) return adapted;
 
-      const clinicalSafe = bank
+      // Se habilidade básica (15 min) restringiu demais, relaxa apenas o tempo de preparo para 25 min mantendo TODAS as restrições e aversões
+      const relaxedTime = bank
         .filter((r) => r.category === cat)
-        .map((r) => adaptAndFilterRecipe(r, restrictions, [], doencas, "avancada", renalStage))
+        .map((r) => adaptAndFilterRecipe(r, restrictions, dislikes, doencas, habilidade, renalStage, 25))
         .filter(Boolean);
 
-      return clinicalSafe.length > 0 ? clinicalSafe : bank.filter((r) => r.category === cat);
+      if (relaxedTime.length >= 2) return relaxedTime;
+
+      // Relaxa aversões/habilidade, mas NUNCA relaxa alergias, vegetarianismo ou doenças clínicas
+      const clinicalSafe = bank
+        .filter((r) => r.category === cat)
+        .map((r) => adaptAndFilterRecipe(r, restrictions, [], doencas, "avancada", renalStage, 90))
+        .filter(Boolean);
+
+      if (clinicalSafe.length > 0) {
+        if (adapted.length === 0 && dislikes.length > 0) {
+          clinicalWarnings.push(
+            `Aviso de combinação restrita (${cat}): mantivemos todas as suas restrições médicas e alergias 100% intactas, mas flexibilizamos algumas preferências/aversões para não faltar opção segura.`
+          );
+        }
+        return clinicalSafe;
+      }
+
+      clinicalWarnings.push(
+        `Aviso importante (${cat}): a combinação de múltiplas restrições simultâneas esgotou o banco padrão desta refeição. Inserimos uma base neutra segura sem violar suas alergias ou diretrizes clínicas — recomendamos acompanhamento individualizado com nutricionista.`
+      );
+      return [buildNeutralSafeFallback(cat)];
     };
 
     const isPratica = profile.variacao === "pratica";
@@ -1426,7 +1673,7 @@ window.DietEngine = (function () {
         objetivoLabel: GOAL_LABELS[profile.objetivo] || profile.objetivo
       },
       targets,
-      appliedGuidelines: buildAppliedGuidelines(profile, targets),
+      appliedGuidelines: buildAppliedGuidelines(profile, targets, clinicalWarnings),
       poolsByCategory,
       days
     };
@@ -1451,7 +1698,31 @@ window.DietEngine = (function () {
     if (!day || !day.meals[mealIndex]) return plan;
 
     const meal = day.meals[mealIndex];
-    const pool = plan.poolsByCategory[meal.category] || [];
+    const basePool = plan.poolsByCategory[meal.category] || [];
+    if (basePool.length <= 1) return plan;
+
+    const arm = (plan.profile && plan.profile.armazenamento_trabalho) || "geladeira_micro";
+    let pool = basePool;
+    if (meal.atWork) {
+      if (meal.category === "principal") {
+        if (arm === "mochila_sem_geladeira") {
+          const filtered = basePool.filter((r) => r.portableRoomTemp || !r.badForWorkMarmita);
+          if (filtered.length > 0) pool = filtered;
+        } else if (arm === "so_geladeira") {
+          const filtered = basePool.filter((r) => r.noReheatNeeded || !r.badForWorkMarmita);
+          if (filtered.length > 0) pool = filtered;
+        } else {
+          const filtered = basePool.filter((r) => !r.badForWorkMarmita);
+          if (filtered.length > 0) pool = filtered;
+        }
+      } else if (
+        (meal.category === "lanche" || meal.category === "cafe" || meal.category === "pre_treino") &&
+        arm === "mochila_sem_geladeira"
+      ) {
+        const portable = basePool.filter((r) => r.portableRoomTemp);
+        if (portable.length > 0) pool = portable;
+      }
+    }
     if (pool.length <= 1) return plan;
 
     const renalStage = getRenalStage(plan.profile);

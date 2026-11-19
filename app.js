@@ -1,7 +1,7 @@
 // Controlador da interface, persistência em localStorage e exportação para PDF
 (function () {
   const STORAGE_PROFILE_KEY = "plano_alimentar_profile_v1";
-  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v16";
+  const STORAGE_PLAN_KEY = "plano_alimentar_plan_v18";
   const STORAGE_CHECKS_KEY = "plano_alimentar_checks_v1";
   const STORAGE_THEME_KEY = "plano_alimentar_theme_v1";
 
@@ -161,9 +161,21 @@
     form.refeicoes.value = String(profile.refeicoes || 4);
     form.variacao.value = profile.variacao || "variada";
     if (form.habilidade) form.habilidade.value = profile.habilidade || "intermediaria";
-    if (form.rotina_trabalho) form.rotina_trabalho.value = profile.rotina_trabalho || "casa";
+    const chkTrabalha = document.getElementById("trabalha_atualmente");
+    const worksCurrently =
+      typeof profile.trabalha_atualmente === "boolean"
+        ? profile.trabalha_atualmente
+        : (profile.rotina_trabalho || "nao_trabalha") !== "nao_trabalha";
+    if (chkTrabalha) chkTrabalha.checked = worksCurrently;
+    if (form.rotina_trabalho) {
+      form.rotina_trabalho.value = worksCurrently
+        ? (profile.rotina_trabalho || "fora_dia_todo")
+        : "nao_trabalha";
+    }
     if (form.armazenamento_trabalho) {
-      form.armazenamento_trabalho.value = profile.armazenamento_trabalho || "geladeira_micro";
+      form.armazenamento_trabalho.value = worksCurrently
+        ? (profile.armazenamento_trabalho || "geladeira_micro")
+        : "em_casa";
     }
     if (form.hora_acorda) form.hora_acorda.value = String(profile.hora_acorda ?? 6);
     if (form.trabalho_inicio) form.trabalho_inicio.value = String(profile.trabalho_inicio ?? 7);
@@ -216,6 +228,16 @@
       doencas.push("renal_alerta");
     }
 
+    const chkTrabalha = document.getElementById("trabalha_atualmente");
+    const trabalhaAtualmente = chkTrabalha ? chkTrabalha.checked : true;
+    const rotinaTrabalho = !trabalhaAtualmente
+      ? "nao_trabalha"
+      : (form.rotina_trabalho ? form.rotina_trabalho.value : "casa");
+    const armazenamentoTrabalho =
+      !trabalhaAtualmente || rotinaTrabalho === "casa" || rotinaTrabalho === "nao_trabalha"
+        ? "em_casa"
+        : (form.armazenamento_trabalho ? form.armazenamento_trabalho.value : "geladeira_micro");
+
     return {
       nome: form.nome.value.trim(),
       objetivo: form.objetivo.value,
@@ -227,10 +249,9 @@
       refeicoes: Number(form.refeicoes.value),
       variacao: form.variacao.value,
       habilidade: form.habilidade ? form.habilidade.value : "intermediaria",
-      rotina_trabalho: form.rotina_trabalho ? form.rotina_trabalho.value : "casa",
-      armazenamento_trabalho: form.armazenamento_trabalho
-        ? form.armazenamento_trabalho.value
-        : "geladeira_micro",
+      trabalha_atualmente: trabalhaAtualmente,
+      rotina_trabalho: rotinaTrabalho,
+      armazenamento_trabalho: armazenamentoTrabalho,
       hora_acorda: form.hora_acorda ? Number(form.hora_acorda.value) : 6,
       trabalho_inicio: form.trabalho_inicio ? Number(form.trabalho_inicio.value) : 7,
       trabalho_fim: form.trabalho_fim ? Number(form.trabalho_fim.value) : 17,
@@ -499,7 +520,7 @@
   function renderRecipes(plan) {
     const container = document.getElementById("recipes-container");
     container.innerHTML = plan.uniqueRecipes
-      .map(({ recipe, count }) => {
+      .map(({ recipe, count, minKcal, maxKcal }) => {
         const ingList = recipe.ingredients
           .map((ing) => {
             const estBadge = ing.estimated ? '<span class="badge-estimate">estimativa</span>' : "";
@@ -512,11 +533,16 @@
           .map((s) => `<li>${escapeHtml(s)}</li>`)
           .join("");
 
+        const rangeNote =
+          typeof minKcal === "number" && typeof maxKcal === "number" && minKcal !== maxKcal
+            ? ` (varia de ${minKcal} a ${maxKcal} kcal entre almoço/jantar)`
+            : "";
+
         return `
           <article class="recipe-card">
             <div>
               <h3>${escapeHtml(recipe.name)}</h3>
-              <p class="meal-macros">Porção calculada: <strong>${recipe.macros.kcal} kcal</strong> | P ${recipe.macros.protein}g | C ${recipe.macros.carbs}g | G ${recipe.macros.fat}g | Aparece ${count}x na semana</p>
+              <p class="meal-macros">Porção base: <strong>${recipe.macros.kcal} kcal</strong>${rangeNote} | P ${recipe.macros.protein}g | C ${recipe.macros.carbs}g | G ${recipe.macros.fat}g | Aparece ${count}x na semana</p>
             </div>
             <div>
               <strong>Ingredientes por porção:</strong>
@@ -652,7 +678,11 @@
 
     document.getElementById("plan-heading").textContent = `Plano semanal de ${plan.profile.nome}`;
     const variacaoText = plan.profile.variacao === "pratica" ? "Modo prático (lotes)" : "Modo variado";
-    const summaryText = `Objetivo: ${plan.profile.objetivoLabel} | ${plan.profile.refeicoes} refeições principais + Ceia opcional | ${variacaoText} | Peso: ${plan.profile.peso} kg`;
+    const actualMainMeals =
+      plan.days && plan.days[0]
+        ? plan.days[0].meals.filter((m) => !m.isOptional).length
+        : plan.profile.refeicoes;
+    const summaryText = `Objetivo: ${plan.profile.objetivoLabel} | ${actualMainMeals} refeições principais + Ceia opcional | ${variacaoText} | Peso: ${plan.profile.peso} kg`;
     document.getElementById("plan-profile-summary").textContent = summaryText;
     document.getElementById("print-subtitle").textContent = `${plan.profile.nome} — ${summaryText}`;
 
@@ -768,12 +798,26 @@
     if (tTreino && document.activeElement !== tTreino) tTreino.value = fmt(profile.hora_treino);
     if (tDorme && document.activeElement !== tDorme) tDorme.value = fmt(profile.hora_dorme);
 
+    const chkTrabalha = document.getElementById("trabalha_atualmente");
+    const works = chkTrabalha ? chkTrabalha.checked : true;
     const isFora =
-      profile.rotina_trabalho === "fora_dia_todo" ||
-      profile.rotina_trabalho === "fora_meio_periodo";
+      works &&
+      (profile.rotina_trabalho === "fora_dia_todo" ||
+        profile.rotina_trabalho === "fora_meio_periodo");
+
+    const wrapRotina = document.getElementById("wrap_rotina_trabalho");
     const wrapInicio = document.getElementById("wrap_trabalho_inicio");
     const wrapFim = document.getElementById("wrap_trabalho_fim");
     const wrapArmazenamento = document.getElementById("wrap_armazenamento_trabalho");
+
+    if (form.rotina_trabalho) form.rotina_trabalho.disabled = !works;
+    if (form.armazenamento_trabalho) form.armazenamento_trabalho.disabled = !isFora;
+    if (form.trabalho_inicio) form.trabalho_inicio.disabled = !isFora;
+    if (form.trabalho_fim) form.trabalho_fim.disabled = !isFora;
+    if (tInicio) tInicio.disabled = !isFora;
+    if (tFim) tFim.disabled = !isFora;
+
+    if (wrapRotina) wrapRotina.classList.toggle("is-dimmed", !works);
     if (wrapInicio) wrapInicio.classList.toggle("is-dimmed", !isFora);
     if (wrapFim) wrapFim.classList.toggle("is-dimmed", !isFora);
     if (wrapArmazenamento) wrapArmazenamento.classList.toggle("is-dimmed", !isFora);
@@ -875,7 +919,15 @@
         rangeEl.addEventListener("input", () => {
           customMealHours = {};
           if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
-            if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
+            if (
+              form.rotina_trabalho &&
+              (form.rotina_trabalho.value === "casa" || form.rotina_trabalho.value === "nao_trabalha")
+            ) {
+              form.rotina_trabalho.value = "fora_dia_todo";
+            }
+            if (form.armazenamento_trabalho && form.armazenamento_trabalho.value === "em_casa") {
+              form.armazenamento_trabalho.value = "geladeira_micro";
+            }
           }
           if (rangeId === "hora_treino" && form.atividade && form.atividade.value === "sedentario") {
             form.atividade.value = "leve";
@@ -892,7 +944,15 @@
             rangeEl.value = String(parsed);
             customMealHours = {};
             if (rangeId === "trabalho_inicio" || rangeId === "trabalho_fim") {
-              if (form.rotina_trabalho) form.rotina_trabalho.value = "fora_dia_todo";
+              if (
+                form.rotina_trabalho &&
+                (form.rotina_trabalho.value === "casa" || form.rotina_trabalho.value === "nao_trabalha")
+              ) {
+                form.rotina_trabalho.value = "fora_dia_todo";
+              }
+              if (form.armazenamento_trabalho && form.armazenamento_trabalho.value === "em_casa") {
+                form.armazenamento_trabalho.value = "geladeira_micro";
+              }
             }
             if (rangeId === "hora_treino" && form.atividade && form.atividade.value === "sedentario") {
               form.atividade.value = "leve";
@@ -903,6 +963,25 @@
       }
     });
 
+    const chkTrabalha = document.getElementById("trabalha_atualmente");
+    if (chkTrabalha) {
+      chkTrabalha.addEventListener("change", () => {
+        customMealHours = {};
+        if (chkTrabalha.checked) {
+          if (form.rotina_trabalho && form.rotina_trabalho.value === "nao_trabalha") {
+            form.rotina_trabalho.value = "fora_dia_todo";
+          }
+          if (form.armazenamento_trabalho && form.armazenamento_trabalho.value === "em_casa") {
+            form.armazenamento_trabalho.value = "geladeira_micro";
+          }
+        } else {
+          if (form.rotina_trabalho) form.rotina_trabalho.value = "nao_trabalha";
+          if (form.armazenamento_trabalho) form.armazenamento_trabalho.value = "em_casa";
+        }
+        updateSchedulePreview();
+      });
+    }
+
     ["rotina_trabalho", "refeicoes", "atividade"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
@@ -910,6 +989,9 @@
           customMealHours = {};
           if (id === "rotina_trabalho" && form.armazenamento_trabalho) {
             const val = el.value;
+            if (val === "nao_trabalha" && chkTrabalha) {
+              chkTrabalha.checked = false;
+            }
             if (val === "nao_trabalha" || val === "casa") {
               form.armazenamento_trabalho.value = "em_casa";
             } else if (form.armazenamento_trabalho.value === "em_casa") {
@@ -960,6 +1042,8 @@
       return;
     }
     formError.hidden = true;
+    checkedItems = {};
+    saveCheckedItems();
     saveProfile(profile);
     const plan = window.DietEngine.generatePlan(profile);
     savePlan(plan);
@@ -1037,5 +1121,12 @@
       savePlan(plan);
       showPlan(plan);
     }
+  }
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {
+        // Ignora falha de registro em ambientes restritos
+      });
+    });
   }
 })();
